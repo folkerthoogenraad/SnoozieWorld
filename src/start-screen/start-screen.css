@@ -1,0 +1,116 @@
+.start-screen__group {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.start-screen__legend {
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.start-screen__categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2px 12px;
+}
+
+.start-screen__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.start-screen__option:hover {
+  background: var(--color-surface-hover);
+}
+
+.start-screen__option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.start-screen__option--game-mode {
+  align-items: flex-start;
+}
+
+.start-screen__option--game-mode input {
+  margin-top: 3px;
+}
+
+.start-screen__option-label {
+  display: block;
+  font-weight: 500;
+}
+
+.start-screen__option-description {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.start-screen__count {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.start-screen__modifiers {
+  display: flex;
+  gap: 8px;
+}
+
+.start-screen__modifier {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 40px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.start-screen__modifier:hover {
+  background: var(--color-surface-hover);
+}
+
+.start-screen__modifier:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Not at its default State. */
+.start-screen__modifier--on,
+.start-screen__modifier--on:hover {
+  border-color: var(--color-accent);
+  background: var(--color-highlight-bg);
+  color: var(--color-accent);
+}
+
+.start-screen__modifier .modifier-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.start-screen__modifier-explanation {
+  min-height: 3em;
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.start-screen__modifier-explanation b {
+  color: var(--color-text);
+  font-weight: 600;
+}

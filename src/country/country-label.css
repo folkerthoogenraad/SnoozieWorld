@@ -1,0 +1,53 @@
+.flag {
+  flex: none;
+  display: block;
+  object-fit: cover;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+}
+
+.flag--small {
+  width: 32px;
+  height: 24px;
+}
+
+.flag--large {
+  width: 56px;
+  height: 42px;
+}
+
+.flag--missing {
+  background: repeating-linear-gradient(45deg, #3a4654 0 4px, #2c3640 4px 8px);
+}
+
+.country-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.country-label__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .country-label {
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+
+  /* Long names ("Central African Republic") wrap to two lines instead of being cut off. */
+  .country-label__name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    line-height: 1.15;
+  }
+}

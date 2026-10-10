@@ -1,0 +1,251 @@
+# Architecture
+
+Vanilla TypeScript + Vite, no UI framework. Every screen part (see [domain-language.md](domain-language.md)) is a class
+that owns its DOM `element` and its own CSS file (BEM-style class names, e.g. `.map__country`).
+
+```
+src/
+  main.ts                   entry point
+  app.ts                    App: composes Navbar, Map and the screens; switches Modes
+  mode.ts                   Mode interface (start/stop)
+  style.css                 global reset and colour variables (--color-land, --color-correct, …)
+  country/country.ts        Country model and loading of Country Shapes
+  country/flag.ts           Flag lookup (flag-icons)
+  country/country-label.ts  Flag and Country Label elements
+  country/country-info.ts   Country Info lookup (capital, population, area, fun fact) and formatting
+  country/country-info.json Country Info data, hand-maintained (see below)
+  country-info/             Country Info dialog, and the Navbar button (ⓘ) that opens it
+  explore/explore-mode.ts   Explore Mode
+  quiz/category.ts          Categories
+  quiz/game-mode.ts         Game Modes
+  quiz/modifier.ts          Modifiers, their States and icons
+  quiz/quiz-settings.ts     Quiz Settings, picking the Quiz Set's Countries, Quiz Rules, upgrading old settings
+  quiz/quiz-run.ts          Quiz Run: shuffle, Prompts, Tries, Prompt Results, Score, snapshot/restore (no DOM)
+  quiz/quiz-session.ts      Quiz Session: saving/restoring the active Quiz Run (localStorage)
+  quiz/stopwatch.ts         Session Time clock and duration formatting
+  quiz/quiz-mode.ts         Quiz Mode: plays a Quiz Run on the Map and Navbar
+  quiz/quiz-status.ts       Navbar content during a Quiz Run (Quiz Progress pills + Prompt)
+  quiz/end-screen.ts        End Screen modal
+  pause-screen/             Pause Screen modal
+  leaderboard/leaderboard.ts       Leaderboard storage (localStorage)
+  leaderboard/leaderboard-view.ts  Leaderboard table, shared by Start and End Screen
+  sound/sound-player.ts     Sound Effects (Web Audio synthesis) and mute state
+  sound/sound-toggle.ts     Sound Toggle button
+  screen/screen.css         two-column modal layout and buttons, shared by Start and End Screen
+  map/world-map.ts          WorldMap (the Map), incl. world repetition, Tiny Country Markers, Capital Dots,
+                            Country States, Map Notice and Hint
+  navbar/navbar.ts          Navbar
+  start-screen/             StartScreen (native <dialog>)
+scripts/
+  build-map-data.mjs        builds public/data/countries.topo.json
+public/data/
+  countries.topo.json       generated Country dataset (committed)
+.github/workflows/deploy.yml  builds and deploys to GitHub Pages (see Deployment)
+vite.config.ts              dev/preview servers listen on the LAN (for testing on a phone); `allowedHosts` adds FolkertsPC
+```
+
+## Modes
+
+`App` holds exactly one `Mode` (`ExploreMode` or `QuizMode`) and switches with `switchMode`: the old Mode's
+`stop()` must undo everything its `start()` did (listeners, Country States, Navbar Status). Modes drive the Map
+through its small API; the Map knows nothing about Modes:
+
+- `onCountryHover(listener)`: mouse/pen moves onto a Country (path or marker), or off it (`null`). Touch has no hover.
+- `onCountryClick(listener)`: click or tap on a Country, or the Ocean (`null`), with the point clicked (px in the
+  Map element). Not fired after a pan.
+- `setHighlightedCountry(id | null)`, `setSelectedCountry(id | null)`
+- `setCountryState(id, 'excluded' | 'correct' | 'half-correct' | 'missed' | null)`, `clearCountryStates()`
+- `flashWrong(id)`: one-off CSS animation; `setPulsingCountry(id | null)`: endless animation until cleared.
+- `showCountry(id)`: animated pan (d3-transition) that brings the whole Country on screen. It zooms out only if
+  needed, and is clamped to the world's edges. Used by the Focus button.
+- `setNotice({ text, action? } | null)`: the Map Notice. It stops pointer, touch and wheel events, so pressing its
+  button doesn't pan the Map. `setPulsingCountry` and `setSelectedCountry` also move the paths to the end of their
+  group, so they are drawn on top.
+- `showHint(content, point)`, `hideHint()`: the Hint popup. It remembers the world point under `point` and is
+  re-placed on every zoom event, so it follows the Map. Placed above the point (below near the top edge), pushed
+  inside the Map sideways with its arrow still on the point. `pointer-events: none`, so it never blocks a click.
+
+The quiz logic lives in `QuizRun`, which has no DOM. `QuizMode` connects it to the Map and Navbar. Countries
+are compared by `id`, because the Map and the App each create their own `Country` objects.
+
+`QuizMode` owns the Session Time (`Stopwatch`) and saves the Quiz Session after every Try, on `pause()`, when
+the page is hidden and on `pagehide`. `pagehide` also fires on reload, including Vite's reload after a code change.
+On start it re-applies the Country States of a restored Quiz Run. `App.openMenu` pauses the active Quiz Mode and
+opens the Pause Screen, or opens the Start Screen when no Quiz Run is active.
+
+On startup, `App` checks `hasQuizSession()`. If a session is saved, it waits for the Countries, restores the
+session with `QuizRun.restore` and opens the Pause Screen. Snapshots that don't match the current Countries are
+discarded, e.g. after a map data change.
+
+When a Quiz Run is finished, `App.finishQuiz` clears the Quiz Session, adds a Leaderboard Entry and opens the End
+Screen after a short delay. Entry ids
+avoid `crypto.randomUUID()`, which is unavailable on plain-http LAN addresses (phone testing).
+
+## Sound
+
+`SoundPlayer` synthesises each Sound Effect from a few oscillator tones (`EFFECTS` table: frequency, waveform,
+volume, length, optional low-pass filter). Each tone has a fast attack and an exponential fade, so there are no clicks.
+The `AudioContext` is created on the first sound, because browsers only allow audio after a user gesture. Mute state:
+`localStorage['snoozieworld.soundMuted']`. The Navbar takes `controls` (the Sound Toggle) for its top-right corner.
+
+## Modifiers
+
+`MODIFIERS` (in `quiz/modifier.ts`) lists each Modifier's States, the first being the default. `QuizSettings.modifiers`
+always holds every Modifier; `GameMode.modifierIds` says which ones the Game Mode shows and uses. The others keep
+their value but are ignored, so switching Game Mode back restores them. Effects:
+
+- Flag: `QuizStatus.createPrompt`, and `GameMode.canAsk` (Flag only needs a Distinct Flag).
+- Guesses: `quizRules(settings)` → `QuizRules { triesPerPrompt, suddenDeath }`, passed to `QuizRun.start` and
+  `QuizRun.restore`. Under Sudden Death a Missed Prompt sets `failed`, which makes the run `finished`; `App` waits
+  longer (1.8 s) before the End Screen so the pulsing Prompt can be seen.
+- Hints: `QuizMode.showHint`, and what `QuizStatus`'s `onPromptClick` does: open Country Info
+  (`QuizMode.showCountryInfo` stops the Session Time until the dialog's `close` event), or with No hints show
+  "Hints are disabled" (`QuizStatus.showPromptNotice`). In Capital to Location it is null: the Prompt is plain text.
+
+`normalizeQuizSettings` upgrades stored settings (Quiz Settings and Quiz Session): missing Modifiers get their
+default, and the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only.
+
+## Quiz Session
+
+`localStorage['snoozieworld.quizSession']`:
+`{ version: 1, settings, run: QuizRunSnapshot, elapsedMs, savedAt }`. `QuizRunSnapshot` holds the Quiz Set ids in
+order, the Prompt Results so far, `index`, `wrongTries` and `confirmNeeded`.
+
+## Leaderboard
+
+`localStorage['snoozieworld.leaderboards']` holds `{ [key]: LeaderboardEntry[] }`. The key is
+`<gameModeId>|<sorted categoryIds>`, e.g. `name-to-location|asia,europe`. Modifiers are not in the key: each entry
+stores `modifiers` (only those its Game Mode uses; missing = all default) and the view shows the icons of the
+non-default ones. Each list is kept sorted (Score desc, then date asc) and cut to 10. Unreadable storage counts as
+empty; failed writes are ignored. On load, `flag-to-location|…` lists are merged into `name-to-location|…` with
+`modifiers: { flag: 'flag-only' }`; the result is written back on the next save.
+
+## Screens
+
+`.screen--fixed-height` (Start, Pause and End Screen) fixes the dialog height to `min(100dvh − 32px, max(60vh, 680px))`, or the
+full height on narrow screens. On wide screens each panel scrolls on its own, and on the End Screen only the lists
+scroll. When stacked, the whole dialog scrolls.
+
+The Start Screen and End Screen are `<dialog>`s whose buttons submit with a `value`. The action runs in the
+dialog's `close` event, based on `returnValue`. Escape closes with an empty `returnValue`, so nothing happens.
+
+## The Map
+
+- The world is projected once with d3-geo's **Mercator** projection into fixed "world units" (1000 wide, 84°N to
+  72°S; further south is only Antarctic interior). The Ocean is the rectangle behind the Countries.
+- Zoom and pan come from d3-zoom on the `<main class="map">` element, so pointer coordinates are in screen pixels.
+  Every zoom event rewrites the SVG's `viewBox`. The paths are never transformed. Transforming a `<g>` let browsers
+  scale a cached bitmap of it, which stayed blurry after zooming until the next repaint (feedback 01).
+- **The world repeats sideways** (feedback 07). d3-zoom's `translateExtent` is unlimited in x, so its transform
+  never jumps during a drag. Each layer (countries, Capital Dots, markers) is drawn once and cloned for world copies
+  −1, 0 and +1 (`translate(±1000)`). `updateViewBox` shifts the viewBox by whole world widths so its centre lies on
+  copy 0; the copies beside it fill the rest. Every copy's elements carry `data-country-id` and are registered in
+  `countryElements`, so clicks, hover and Country States work on all of them. `showCountry` flies to the copy
+  nearest the current view.
+- Minimum zoom fits the whole world on screen, but never shows more than two world widths (so three copies are
+  always enough). It is recalculated on resize (ResizeObserver). The view starts centred on the world. Maximum
+  zoom is 5000× the minimum, which is what Vatican City needs to be clickable.
+- Input: wheel or trackpad pinch zooms; touch pinch zooms; left or middle mouse button or one finger pans;
+  double-click or double-tap zooms in. `touch-action: none` keeps the browser's own page zoom out of the way.
+- Each Country is one `<path class="map__country" data-country-id="NLD">`. Borders use
+  `vector-effect: non-scaling-stroke`, so they stay thin at every zoom level.
+- **Tiny Country Markers**: Countries under 2,500 km² (excluding Other Areas) also get a
+  `<g class="map__marker" data-country-id>` with a visible dot and a larger transparent hit circle (bigger on touch
+  screens). Each one sits at Natural Earth's label point. On every zoom event their radii are set to
+  `px / zoom` so they keep the same size on screen. A marker hides once its Country is ≥ 16px on screen. Smaller
+  Countries' markers are drawn on top.
+- **Capital Dots**: one `<circle>` per capital per world copy. Like the markers, their radius is set to
+  `px / zoom` on zoom (only when the zoom changes, not on a pan), so they keep their size on screen. Drawn below
+  the Tiny Country Markers; the layer has `pointer-events: none`. Not zero-length round-capped lines with a
+  `non-scaling-stroke`: WebKit (Safari) scales those with the zoom, so they grew over small Countries.
+- **Country States** are CSS classes (`map__country--excluded`, `--correct`, `--missed`, `--highlighted`) on both
+  the path and the marker. They only set the `--country-fill` custom property, which the path and the marker's dot
+  both use.
+
+## Country dataset
+
+Source: [Natural Earth](https://www.naturalearthdata.com/) 1:10m *Admin 0 – Countries* and *Admin 0 – Map Units*
+(public domain), fetched from the `nvkelso/natural-earth-vector` GitHub repo. Regenerate with:
+
+```
+npm run build:map-data
+```
+
+The script:
+1. Builds one topology from the Map Units. Map Units are Countries cut into parts, e.g. France vs. French Guiana,
+   or England vs. Scotland.
+2. Keeps the Map Units of `SPLIT_COUNTRIES` (France, Netherlands, Norway, New Zealand, Australian Indian Ocean
+   Territories) as separate Countries; the split-off parts become Overseas Territories. Merges disputed/leased
+   areas into their holder (`MERGE_INTO`). All other Map Units are merged back into their Country. Merging on the
+   shared topology gives exact shapes.
+3. Sets the properties the app uses: `name` (with `NAME_OVERRIDES`), `kind` (sovereign/territory/other, see
+   `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`), `isoA2`, `labelPoint`,
+   `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
+   because identical flags differ only in their ids.
+4. Simplifies the shapes to ~30% of their points, but never simplifies tiny Countries. Writes TopoJSON
+   (~1.7 MB, ~600 KB gzipped).
+
+Downloads are cached in `scripts/.cache/` (git-ignored).
+
+Known limits of the source data:
+- Natural Earth's shapes are generalised for 1:10 million scale. Deep zoom shows straight coastline segments, and
+  Vatican City is a ~110 m square rather than its real outline.
+- 262 Countries: 198 Sovereign States, 57 Overseas Territories, 7 Other Areas.
+
+## Country Info
+
+`src/country/country-info.json`, keyed by Country id: `capital`, optional `capitalNote` (split or disputed
+capitals), `capitalPoint` ([lon, lat], for the Capital Dot), `population`, `area` (km², as commonly cited; the
+dataset's own `Country.area` is computed from the simplified shapes and only used for Tiny Country Markers),
+`funFacts` (`{ text, source }[]`, see below), and for Overseas Territories `partOf` (the Sovereign State's id).
+Imported into the bundle.
+
+Capitals, populations and areas were compiled with AI assistance from general knowledge (request 06), not from
+one authoritative source; populations are recent estimates.
+
+**Fun Facts** (feedback after request 08) are sourced: every fact has the URL of a page that states it, shown
+in Country Info behind the external-link button. How they were made:
+1. One agent per ~20 Countries wrote ~6 candidate facts each from general knowledge.
+2. A separate agent per chunk fetched a source page for every candidate (mostly English Wikipedia; also
+   Guinness World Records, UNESCO, official tourism and government sites, major media), recorded the supporting
+   quote, rewrote facts to match their source, and dropped facts it couldn't confirm. Blogs, travel listicles
+   and search snippets did not count.
+3. Facts resting on "citation needed" sentences, partial support, or political/disputed topics were dropped by
+   hand.
+4. A script fetched every source again and checked that the recorded quote is on the page.
+Wikipedia articles change, so a source can drift; when a fact is reported wrong, fix or remove it rather than
+keeping it unsourced. Every Country should keep at least one sourced fact.
+
+When fixing an entry, keep these checks true: every Country id has an entry; `capital` and `capitalPoint` are both null or both set; the
+`capitalPoint` lies in or within a few km of the Country Shape (many coastal capitals sit just off the simplified
+coastline); capital names are unique except where `capitalPrompt` disambiguates them.
+
+## Flags
+
+SVGs from [flag-icons](https://github.com/lipis/flag-icons) (MIT), 4:3 versions. `src/country/flag.ts` uses
+`import.meta.glob` with `?no-inline`. That way the bundle only holds a code → URL table, and each flag file is
+downloaded the first time it is shown.
+
+## Deployment
+
+`.github/workflows/deploy.yml` builds every push to `main` and every pull request (`npm ci`, then `npm run build`,
+which type-checks first). Pushes to `main` (and manual runs) are also deployed to GitHub Pages. One-time setup: in
+the repo's *Settings → Pages*, set *Source* to *GitHub Actions*.
+
+Pages serves the site from a sub-path, e.g. `https://<user>.github.io/<repo>/`. The workflow gets that path from
+`actions/configure-pages` and builds with `--base <path>/`. Code must therefore never use absolute paths for its
+own files: use `import.meta.env.BASE_URL` (as `country.ts` does for the dataset), or import the file so Vite
+bundles it. To try a sub-path build locally: `npm run build -- --base /SnoozieWorld/` and
+`npx vite preview --base /SnoozieWorld/`.
+
+The app has no URL routing, so no 404 fallback page is needed.
+
+## Libraries and licences
+
+| Package | Use | Licence |
+| --- | --- | --- |
+| d3-geo, d3-zoom, d3-selection, d3-transition | projection, zoom/pan, DOM, animated pan | ISC |
+| topojson-client | decoding the dataset | ISC |
+| flag-icons | Flags | MIT |
+| topojson-server, topojson-simplify | building the dataset (dev only) | ISC |
+| Natural Earth data | Country Shapes | Public domain |

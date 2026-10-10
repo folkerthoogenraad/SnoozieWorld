@@ -1,0 +1,166 @@
+.country-info {
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.35);
+  overflow: auto;
+}
+
+.country-info::backdrop {
+  background: rgb(10 20 30 / 0.45);
+}
+
+.country-info__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.country-info__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.country-info__flag {
+  flex: none;
+  display: flex;
+}
+
+.country-info__name {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.country-info__kind {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.country-info__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.country-info__fact {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-surface-side);
+}
+
+.country-info__fact dt {
+  color: var(--color-text-muted);
+}
+
+.country-info__fact dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.country-info__note {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.country-info__fun-fact {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-highlight-bg);
+}
+
+.country-info__fun-fact-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: -4px -6px 4px 0;
+}
+
+.country-info__fun-fact-title {
+  flex: 1;
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+}
+
+.country-info__fun-fact-text {
+  margin: 0;
+}
+
+.country-info__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The dice and the source link, top right of the fun fact. */
+.country-info__fun-fact-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.country-info__fun-fact-button[hidden] {
+  display: none;
+}
+
+.country-info__fun-fact-button:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.country-info__fun-fact-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
+.country-info__fun-fact-button svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.country-info__source svg {
+  fill: none;
+}
+
+.country-info__reroll--roll svg {
+  animation: country-info-roll 0.4s ease-out;
+}
+
+@keyframes country-info-roll {
+  from {
+    transform: rotate(-200deg) scale(0.8);
+  }
+}
+
+.country-info__fun-fact-text--new {
+  animation: country-info-fact-in 0.25s ease-out;
+}
+
+@keyframes country-info-fact-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

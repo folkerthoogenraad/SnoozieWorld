@@ -1,0 +1,131 @@
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaderboard__title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.leaderboard__subtitle {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.leaderboard__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard__row {
+  display: grid;
+  /* Rank, Score, Modifiers (up to three icons), counts, time, date. */
+  grid-template-columns: 2ch 4.5ch 50px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard__row:nth-child(odd) {
+  background: var(--color-surface-alt);
+}
+
+.leaderboard__row--empty {
+  color: var(--color-text-muted);
+}
+
+.leaderboard__row--highlighted,
+.leaderboard__row--highlighted:nth-child(odd) {
+  background: var(--color-highlight-bg);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  font-weight: 600;
+}
+
+.leaderboard__rank {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.leaderboard__score {
+  font-weight: 700;
+}
+
+.leaderboard__modifiers {
+  display: flex;
+  gap: 1px;
+  color: var(--color-accent);
+}
+
+.leaderboard__modifier {
+  display: flex;
+}
+
+.leaderboard__modifier .modifier-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.leaderboard__counts {
+  display: flex;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.leaderboard__correct {
+  color: var(--color-text-correct);
+}
+
+.leaderboard__half-correct {
+  color: var(--color-text-half-correct);
+}
+
+.leaderboard__missed {
+  color: var(--color-text-missed);
+}
+
+.leaderboard__time {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard__date {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.leaderboard__note {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .leaderboard__row {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .leaderboard__counts {
+    gap: 6px;
+  }
+}
+
+/* Small phones: no room for the date next to the Modifiers. */
+@media (max-width: 400px) {
+  .leaderboard__row {
+    grid-template-columns: 2ch 4.5ch 50px 1fr auto;
+  }
+
+  .leaderboard__date {
+    display: none;
+  }
+}

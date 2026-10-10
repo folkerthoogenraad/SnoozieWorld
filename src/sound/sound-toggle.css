@@ -1,0 +1,34 @@
+.sound-toggle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sound-toggle:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.sound-toggle[aria-pressed='false'] {
+  opacity: 0.6;
+}
+
+.sound-toggle svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sound-toggle__speaker {
+  fill: currentColor;
+}

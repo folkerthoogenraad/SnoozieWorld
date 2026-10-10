@@ -1,0 +1,254 @@
+.map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-ocean);
+  cursor: grab;
+  /* Pinch and pan are handled by the Map itself, not by the browser. */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.map:active {
+  cursor: grabbing;
+}
+
+.map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map__ocean {
+  fill: var(--color-ocean);
+}
+
+/* A Country is drawn by its path and, when tiny, its marker. The state
+   classes below go on both and only change --country-fill. */
+.map__country,
+.map__marker {
+  --country-fill: var(--color-land);
+  --country-stroke: var(--color-border);
+}
+
+.map__country {
+  fill: var(--country-fill);
+  stroke: var(--country-stroke);
+  stroke-width: 0.5px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.map__marker-dot {
+  fill: var(--country-fill);
+  stroke: var(--color-marker-stroke);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.map__marker-hit {
+  fill: transparent;
+}
+
+/* Capital Dots: sized in WorldMap.updateMarkers. */
+.map__capitals {
+  pointer-events: none;
+}
+
+.map__capital-dot {
+  fill: var(--color-capital);
+  stroke: rgb(255 255 255 / 0.7);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.map__country--excluded {
+  --country-fill: var(--color-excluded);
+  --country-stroke: var(--color-excluded-border);
+}
+
+.map__marker.map__country--excluded {
+  display: none;
+}
+
+.map__country--correct {
+  --country-fill: var(--color-correct);
+}
+
+.map__country--half-correct {
+  --country-fill: var(--color-half-correct);
+}
+
+.map__country--missed {
+  --country-fill: var(--color-missed);
+}
+
+.map__country--highlighted {
+  --country-fill: var(--color-land-highlighted);
+}
+
+.map__country--correct.map__country--highlighted {
+  --country-fill: var(--color-correct-highlighted);
+}
+
+.map__country--half-correct.map__country--highlighted {
+  --country-fill: var(--color-half-correct-highlighted);
+}
+
+.map__country--selected {
+  --country-fill: var(--color-land-selected);
+}
+
+.map__country.map__country--selected {
+  stroke: var(--color-selected-outline);
+  stroke-width: 2px;
+}
+
+.map__country--selected .map__marker-dot {
+  stroke: var(--color-selected-outline);
+  stroke-width: 2.5px;
+}
+
+.map__country--missed.map__country--highlighted {
+  --country-fill: var(--color-missed-highlighted);
+}
+
+.map__country.map__country--flash-wrong,
+.map__country--flash-wrong .map__marker-dot {
+  animation: map-flash-wrong 0.7s ease-out;
+}
+
+/* A Missed Prompt blinks until the player clicks it: from vivid red to near-white
+   with a white outline, clearly different from the static red of earlier Missed Countries. */
+.map__country.map__country--pulsing,
+.map__country--pulsing .map__marker-dot {
+  stroke: var(--color-pulse-outline);
+  stroke-width: 2px;
+  animation: map-pulse 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes map-flash-wrong {
+  0%,
+  40% {
+    fill: var(--color-wrong-flash);
+  }
+}
+
+@keyframes map-pulse {
+  from {
+    fill: var(--color-pulse-from);
+  }
+  to {
+    fill: var(--color-pulse-to);
+  }
+}
+
+.map__status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.map__notice {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 6px 6px 6px 16px;
+  border-radius: 999px;
+  background: rgb(22 32 43 / 0.92);
+  color: #fff;
+  font-weight: 500;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+  cursor: default;
+  animation: map-notice-in 0.25s ease-out;
+}
+
+@keyframes map-notice-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+.map__notice-button {
+  flex: none;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map__notice-button:hover {
+  background: var(--color-accent-hover);
+}
+
+/* A Hint: names the Country a wrong Try clicked. Placed by WorldMap.positionHint. */
+.map__hint {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: min(280px, calc(100% - 16px));
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgb(22 32 43 / 0.92);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+  pointer-events: none;
+  animation: map-hint-in 0.15s ease-out, map-hint-out 0.3s ease-in 2.2s forwards;
+}
+
+/* The arrow pointing at the clicked point. */
+.map__hint::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--arrow-x, 50%);
+  border: 7px solid transparent;
+  border-top-color: rgb(22 32 43 / 0.92);
+  transform: translateX(-50%);
+}
+
+.map__hint--below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: rgb(22 32 43 / 0.92);
+}
+
+.map__hint-detail {
+  color: rgb(255 255 255 / 0.75);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+@keyframes map-hint-in {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+}
+
+@keyframes map-hint-out {
+  to {
+    opacity: 0;
+  }
+}

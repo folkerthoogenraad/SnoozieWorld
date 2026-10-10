@@ -1,0 +1,298 @@
+.quiz-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.quiz-status__progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* Fixed minimum widths and tabular digits keep the pills from changing size. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 64px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pill svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pill__icon {
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.pill--question {
+  min-width: 100px;
+}
+
+.pill--correct svg {
+  color: var(--color-pill-correct);
+}
+
+.pill--half-correct .pill__icon {
+  color: var(--color-pill-half-correct);
+}
+
+.pill--missed svg {
+  color: var(--color-pill-missed);
+}
+
+.pill[hidden] {
+  display: none;
+}
+
+.pill--score {
+  min-width: 60px;
+  font-weight: 600;
+}
+
+.quiz-status__prompt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 320px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.quiz-status__prompt .country-label__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+/* Capital to Location: the capital's name after a Capital Dot, as on the Map. */
+.quiz-status__capital {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.quiz-status__capital::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-capital);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.8);
+}
+
+.quiz-status__prompt--new {
+  animation: quiz-status-new 0.3s ease-out;
+}
+
+@keyframes quiz-status-new {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* A wrong Try. */
+.quiz-status__prompt--shake {
+  animation: quiz-status-shake 0.45s ease-in-out;
+}
+
+@keyframes quiz-status-shake {
+  15%,
+  55% {
+    transform: translateX(-6px);
+  }
+  35%,
+  75% {
+    transform: translateX(6px);
+  }
+  90% {
+    transform: translateX(-2px);
+  }
+}
+
+/* Correct: a happy, bouncy pop with a green glow. */
+.pill--pop {
+  animation: pill-pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes pill-pop {
+  30% {
+    transform: scale(1.3);
+    background: var(--color-pill-correct);
+    box-shadow: 0 0 14px var(--color-pill-correct);
+    color: #fff;
+  }
+}
+
+.pill--pop svg {
+  animation: pill-pop-icon 0.6s ease-out;
+}
+
+@keyframes pill-pop-icon {
+  30% {
+    color: #fff;
+    transform: rotate(-12deg) scale(1.2);
+  }
+}
+
+/* Half Correct: a calmer nudge with a yellow tint. */
+.pill--nudge {
+  animation: pill-nudge 0.5s ease-in-out;
+}
+
+@keyframes pill-nudge {
+  40% {
+    transform: scale(1.12);
+    background: color-mix(in srgb, var(--color-pill-half-correct) 45%, transparent);
+  }
+}
+
+/* Missed: a red buzz. */
+.pill--buzz {
+  animation: pill-buzz 0.5s linear;
+}
+
+@keyframes pill-buzz {
+  0%,
+  100% {
+    transform: none;
+  }
+  10%,
+  30%,
+  50%,
+  70% {
+    transform: translateX(-3px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(3px);
+  }
+  10%,
+  80% {
+    background: var(--color-pill-missed);
+    box-shadow: 0 0 12px var(--color-pill-missed);
+    color: #fff;
+  }
+}
+
+.pill--buzz svg {
+  animation: pill-buzz-icon 0.5s linear;
+}
+
+@keyframes pill-buzz-icon {
+  10%,
+  80% {
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-status__prompt--new,
+  .quiz-status__prompt--shake,
+  .pill--pop,
+  .pill--pop svg,
+  .pill--nudge,
+  .pill--buzz,
+  .pill--buzz svg {
+    animation-duration: 0.01s;
+  }
+}
+
+/* Phones: pills on the first row, the Prompt on its own row below. */
+@media (max-width: 600px) {
+  .quiz-status {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .quiz-status__progress {
+    gap: 4px;
+  }
+
+  .pill {
+    min-width: 46px;
+    height: 24px;
+    padding: 0 7px;
+    font-size: 0.8rem;
+  }
+
+  .pill--question {
+    min-width: 78px;
+  }
+
+  .quiz-status__prompt {
+    width: 100%;
+  }
+}
+
+/* Below the Prompt, e.g. "Hints are disabled" when it is clicked during a No hints Quiz Run. */
+.quiz-status__prompt-notice {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
+  pointer-events: none;
+  animation:
+    quiz-status-notice-in 0.15s ease-out,
+    quiz-status-notice-out 0.3s ease-in 1.5s forwards;
+}
+
+.quiz-status__prompt-notice::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 20px;
+  border: 6px solid transparent;
+  border-bottom-color: var(--color-surface);
+}
+
+@keyframes quiz-status-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes quiz-status-notice-out {
+  to {
+    opacity: 0;
+  }
+}

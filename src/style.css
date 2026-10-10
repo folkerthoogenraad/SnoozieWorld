@@ -1,0 +1,72 @@
+:root {
+  --color-land: #5fa84f;
+  --color-land-highlighted: #a3d98f;
+  --color-border: #2f5e27;
+  --color-ocean: #3b82b8;
+  --color-marker-stroke: #ffffff;
+  --color-land-selected: #c8ef8a;
+  --color-selected-outline: #ffffff;
+  --color-capital: #111111;
+
+  /* Country States during a Quiz */
+  --color-excluded: #a9aea6;
+  --color-excluded-border: #7d827a;
+  --color-correct: #ffffff;
+  --color-correct-highlighted: #dfe6dc;
+  --color-half-correct: #f2cf5b;
+  --color-half-correct-highlighted: #f8e29a;
+  --color-missed: #e0604f;
+  --color-missed-highlighted: #ec9488;
+  --color-wrong-flash: #c62828;
+  --color-pulse-from: #ff1f1f;
+  --color-pulse-to: #ffe3df;
+  --color-pulse-outline: #ffffff;
+
+  /* Quiz Progress pills */
+  --color-pill-correct: #4caf50;
+  --color-pill-half-correct: #f2cf5b;
+  --color-pill-missed: #ef5350;
+
+  --color-navbar-bg: #16202b;
+  --color-navbar-text: #f2f5f8;
+
+  --color-surface: #ffffff;
+  --color-surface-hover: #eef1f4;
+  --color-surface-active: #dfe4ea;
+  --color-surface-alt: #ffffff;
+  --color-surface-side: #f5f7f9;
+  --color-highlight-bg: #e7f0fb;
+  --color-text-correct: #2e7d32;
+  --color-text-half-correct: #a67c00;
+  --color-text-missed: #c62828;
+  --color-text: #1b2430;
+  --color-text-muted: #5a6675;
+  --color-accent: #2f7dd1;
+  --color-accent-hover: #2468b3;
+
+  --navbar-height: 56px;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}

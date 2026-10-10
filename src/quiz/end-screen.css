@@ -1,0 +1,143 @@
+.end-screen__summary {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.end-screen__groups {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Stacked layout: the whole End Screen scrolls instead. */
+@media (max-width: 760px) {
+  .end-screen__groups {
+    overflow-y: visible;
+  }
+}
+
+.end-screen__score {
+  margin: 4px 0 0;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.end-screen__time {
+  margin-bottom: 8px;
+}
+
+.end-screen__group {
+  border: 1px solid var(--color-surface-active);
+  border-radius: 8px;
+}
+
+.end-screen__group-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.end-screen__group-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Disclosure arrow on the right. */
+.end-screen__group-summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  border-right: 2px solid var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+
+.end-screen__group[open] .end-screen__group-summary::after {
+  transform: rotate(225deg);
+}
+
+.end-screen__group-summary:hover {
+  background: var(--color-surface-hover);
+  border-radius: 8px;
+}
+
+.end-screen__group-icon {
+  width: 1.2em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.end-screen__group--correct .end-screen__group-icon {
+  color: var(--color-text-correct);
+}
+
+.end-screen__group--half-correct .end-screen__group-icon {
+  color: var(--color-text-half-correct);
+}
+
+.end-screen__group--missed .end-screen__group-icon {
+  color: var(--color-text-missed);
+}
+
+.end-screen__group-label {
+  font-weight: 500;
+}
+
+.end-screen__group-count {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.end-screen__countries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 14px 12px;
+  list-style: none;
+}
+
+.end-screen__countries .country-label {
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.end-screen__countries .flag {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15);
+}
+
+.end-screen__none {
+  color: var(--color-text-muted);
+}
+
+.end-screen__countries li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Capital to Location: the capital after the Country. */
+.end-screen__capital {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.end-screen__failed {
+  margin-bottom: 8px;
+  color: var(--color-text-missed);
+  font-weight: 600;
+}

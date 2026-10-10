@@ -1,0 +1,5 @@
+The state of the app should be persisted across refreshes. This is mostly during development, because any change to the code refreshes the screen and therefore loses all progress. Whenever a guess is added (either miss, hit, doesn't matter), it should be saved to localstorage. Include the session time in the save as well. 
+
+Whenever the browser page is opened again, and there is a session active, the startscreen should be repladed with a new "continue screen". This should have a button to "continue current quiz". It should show how far along we are in the quiz and what the quiz exactly is (and the scores). The other button should be "abbandon", to go to the start screen. 
+
+Clicking the "snoozieworld" button should now also open this continue screen. Maybe lets just call this the "pause" screen instead, becuase that is basically what it is.

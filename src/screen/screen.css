@@ -1,0 +1,135 @@
+/* The two-column modal used by the Start Screen and the End Screen. */
+.screen {
+  width: min(940px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.35);
+  overflow: auto;
+}
+
+.screen::backdrop {
+  background: rgb(10 20 30 / 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.screen__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* A fixed size, so content changes (like opening a list) never resize the screen:
+   at least 60% of the viewport height, 680px on most screens, never taller than the viewport. */
+.screen--fixed-height {
+  height: min(calc(100dvh - 32px), max(60vh, 680px));
+}
+
+.screen--fixed-height .screen__columns {
+  height: 100%;
+}
+
+.screen--fixed-height .screen__panel {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.screen__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+}
+
+.screen__panel--side {
+  background: var(--color-surface-side);
+  border-left: 1px solid var(--color-surface-active);
+}
+
+.screen__title {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.screen__text {
+  margin: 0;
+}
+
+.screen__text--muted {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.screen__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.screen__button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.screen__button:hover {
+  background: var(--color-accent-hover);
+}
+
+.screen__button:disabled {
+  background: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.screen__button--secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.screen__button--secondary:hover {
+  background: var(--color-surface-active);
+}
+
+.screen__button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Narrow screens: the Leaderboard goes below. */
+@media (max-width: 760px) {
+  .screen__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .screen__panel {
+    padding: 20px;
+  }
+
+  .screen__panel--side {
+    border-left: none;
+    border-top: 1px solid var(--color-surface-active);
+  }
+
+  .screen--fixed-height {
+    height: calc(100dvh - 32px);
+  }
+
+  .screen--fixed-height .screen__columns {
+    height: auto;
+  }
+
+  .screen--fixed-height .screen__panel {
+    overflow-y: visible;
+  }
+}

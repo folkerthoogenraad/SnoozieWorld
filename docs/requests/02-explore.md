@@ -1,0 +1,1 @@
+Before we start making actual game modes, lets start with the explore mode. It is not a game, but hovering on a country should display the country name in the navbar, with the flag attached on the left side of it. This is basically "free practise" for the countries.

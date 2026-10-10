@@ -1,0 +1,45 @@
+/* The Explored Country or the Prompt in the Navbar: click it for Country Info. */
+.country-info-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 10px 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  animation: country-info-button-in 0.2s ease-out;
+}
+
+.country-info-button:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.country-info-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
+.country-info-button__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.country-info-button:hover .country-info-button__icon {
+  opacity: 1;
+}
+
+@keyframes country-info-button-in {
+  from {
+    opacity: 0;
+  }
+}
