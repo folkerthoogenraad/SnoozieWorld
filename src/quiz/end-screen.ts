@@ -2,6 +2,7 @@ import { countryInfo } from '../country/country-info.ts'
 import { createCountryLabel } from '../country/country-label.ts'
 import { createLeaderboardView, describeQuizSettings } from '../leaderboard/leaderboard-view.ts'
 import type { LeaderboardEntry } from '../leaderboard/leaderboard.ts'
+import { createStreakLabel } from '../streak/streak.ts'
 import '../screen/screen.css'
 import './end-screen.css'
 import { formatScore, type PromptResult, type QuizRun } from './quiz-run.ts'
@@ -16,7 +17,8 @@ const RESULT_GROUPS: { result: PromptResult; icon: string; label: string }[] = [
 
 /**
  * The End Screen: the modal shown when a Quiz Run is finished. Left: the
- * Score and the Countries per result, each list collapsible. Right: the
+ * Score (with the Quiz Streak it carries over, when perfect) and the Countries
+ * per result, each list collapsible. Right: the
  * Leaderboard with the new entry highlighted.
  */
 export class EndScreen {
@@ -71,7 +73,7 @@ export class EndScreen {
 
     const title = document.createElement('h1')
     title.className = 'screen__title'
-    title.textContent = run.failed ? 'Sudden death!' : 'Quiz finished'
+    title.textContent = run.failed ? 'Sudden death!' : run.perfect ? 'Perfect!' : 'Quiz finished'
 
     const subtitle = document.createElement('p')
     subtitle.className = 'screen__text screen__text--muted'
@@ -89,6 +91,16 @@ export class EndScreen {
     const groups = document.createElement('div')
     groups.className = 'end-screen__groups'
     fragment.append(title, subtitle, score, time)
+    if (run.perfect) {
+      const streak = document.createElement('p')
+      streak.className = 'screen__text end-screen__streak'
+      streak.append(
+        'Streak ',
+        createStreakLabel(run.streak, run.total),
+        ': it keeps going in your next quiz with these settings.',
+      )
+      fragment.append(streak)
+    }
     if (run.failed) {
       const failed = document.createElement('p')
       failed.className = 'screen__text end-screen__failed'

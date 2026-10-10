@@ -7,6 +7,8 @@ import type { QuizRules } from './quiz-run.ts'
 /** What the player chose on the Start Screen. */
 export interface QuizSettings {
   categoryIds: string[]
+  /** "Individual states in USA": asks the US States, and never the USA as a whole. */
+  usStates: boolean
   gameModeId: GameModeId
   modifiers: ModifierSettings
 }
@@ -14,6 +16,7 @@ export interface QuizSettings {
 const STORAGE_KEY = 'snoozieworld.quizSettings'
 const DEFAULT_SETTINGS: QuizSettings = {
   categoryIds: ['europe'],
+  usStates: false,
   gameModeId: 'name-to-location',
   modifiers: DEFAULT_MODIFIERS,
 }
@@ -22,15 +25,36 @@ const DEFAULT_SETTINGS: QuizSettings = {
 export function quizCountries(settings: QuizSettings, countries: readonly Country[]): Country[] {
   const gameMode = gameModeById(settings.gameModeId)
   const categories = CATEGORIES.filter((category) => settings.categoryIds.includes(category.id))
-  return countries.filter(
-    (country) => gameMode.canAsk(country, settings.modifiers) && categories.some((c) => c.includes(country)),
-  )
+  // The USA, when its States are asked instead (e.g. with North America).
+  const replaced = new Set(settings.usStates ? countries.map((country) => country.stateOf) : [])
+  const included = (country: Country) =>
+    country.kind === 'state'
+      ? settings.usStates
+      : !replaced.has(country.id) && categories.some((c) => c.includes(country))
+  return countries.filter((country) => included(country) && gameMode.canAsk(country, settings.modifiers))
 }
 
 /** How a Quiz Run with these settings is played, set by the Guesses Modifier. */
 export function quizRules(settings: QuizSettings): QuizRules {
   const guesses = settings.modifiers.guesses
   return { triesPerPrompt: guesses === 'two-guesses' ? 2 : 1, suddenDeath: guesses === 'sudden-death' }
+}
+
+/**
+ * The settings Practice Mode plays with: it ignores the Modifiers, except the
+ * Flag Modifier, so the player can practise flags too.
+ */
+export function practiceSettings(settings: QuizSettings): QuizSettings {
+  return { ...settings, modifiers: { ...DEFAULT_MODIFIERS, flag: settings.modifiers.flag } }
+}
+
+/**
+ * Whether the Prompt's Country Info would give the answer away, so clicking the
+ * Prompt must not open it: in Capital to Location it names the Country (feedback
+ * 09), and with Flag only it names the flag (feedback 10).
+ */
+export function promptInfoGivesAnswer(settings: QuizSettings): boolean {
+  return settings.gameModeId === 'capital-to-location' || activeModifiers(settings).flag === 'flag-only'
 }
 
 /**
@@ -49,10 +73,11 @@ export function activeModifiers(settings: QuizSettings): Partial<ModifierSetting
  */
 export function normalizeQuizSettings(stored: unknown): QuizSettings | null {
   if (!stored || typeof stored !== 'object') return null
-  const { categoryIds, gameModeId, modifiers } = stored as Record<string, unknown>
+  const { categoryIds, usStates, gameModeId, modifiers } = stored as Record<string, unknown>
   if (!Array.isArray(categoryIds)) return null
   const normalized: QuizSettings = {
     categoryIds: categoryIds.filter((id) => CATEGORIES.some((c) => c.id === id)),
+    usStates: usStates === true,
     gameModeId: 'name-to-location',
     modifiers: normalizeModifiers(modifiers),
   }

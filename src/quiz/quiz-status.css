@@ -228,8 +228,9 @@
   }
 }
 
-/* Phones: pills on the first row, the Prompt on its own row below. */
-@media (max-width: 600px) {
+/* Phones and tablets (up to 960px, where a one-row Navbar squeezed the Prompt):
+   pills on the first row, the Prompt on its own row below. */
+@media (max-width: 960px) {
   .quiz-status {
     flex-wrap: wrap;
     gap: 6px;
@@ -294,5 +295,12 @@
 @keyframes quiz-status-notice-out {
   to {
     opacity: 0;
+  }
+}
+
+/* Narrow phones: no room for the Quiz Streak; its Sound Effects still play. */
+@media (max-width: 480px) {
+  .pill--quiz-streak {
+    display: none;
   }
 }

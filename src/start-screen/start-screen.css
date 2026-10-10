@@ -38,6 +38,10 @@
   accent-color: var(--color-accent);
 }
 
+.start-screen__option--us-states {
+  margin-top: 4px;
+}
+
 .start-screen__option--game-mode {
   align-items: flex-start;
 }
@@ -113,4 +117,131 @@
 .start-screen__modifier-explanation b {
   color: var(--color-text);
   font-weight: 600;
+}
+
+/* The Explore split button: Explore, plus an arrow that opens a menu with Practice. */
+.start-screen__split {
+  position: relative;
+  display: flex;
+  gap: 1px;
+}
+
+.start-screen__split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.start-screen__split-toggle {
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.start-screen__split-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+}
+
+.start-screen__split-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* Opens upwards, above the buttons. */
+.start-screen__mode-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 1;
+  width: min(300px, calc(100vw - 64px));
+  padding: 4px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+
+.start-screen__mode-menu[hidden] {
+  display: none;
+}
+
+.start-screen__mode-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-screen__mode-item:hover,
+.start-screen__mode-item:focus-visible {
+  background: var(--color-surface-hover);
+  outline: none;
+}
+
+.start-screen__mode-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Live Streak, best Streak and Learned count of the Practice Set. */
+.start-screen__practice-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.start-screen__practice-stats[hidden] {
+  display: none;
+}
+
+.start-screen__practice-stat {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.start-screen__practice-stat b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.start-screen__mode-reset {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 6px 10px;
+  border: none;
+  border-top: 1px solid var(--color-surface-active);
+  border-radius: 0 0 8px 8px;
+  background: none;
+  color: var(--color-text-missed);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-screen__mode-reset:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.start-screen__mode-reset:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  cursor: default;
 }

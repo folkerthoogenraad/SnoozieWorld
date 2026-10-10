@@ -1,0 +1,1 @@
+In the quiz selection, add a checkbox for "individual states in USA". When this checkbox is checked the USA should no longer be one big country, but should be treated as all the individual states instead.

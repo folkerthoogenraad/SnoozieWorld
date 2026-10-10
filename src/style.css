@@ -26,6 +26,13 @@
   --color-pill-correct: #4caf50;
   --color-pill-half-correct: #f2cf5b;
   --color-pill-missed: #ef5350;
+  --color-pill-streak: #ff9f43;
+  --color-pill-learned: #64b5f6;
+  /* Streak Multiplier badges: ×2, ×3, ×4, ×5 and up */
+  --color-multiplier-x2: #f2cf5b;
+  --color-multiplier-x3: #ff9f43;
+  --color-multiplier-x4: #ef5350;
+  --color-multiplier-x5: #9c6ade;
 
   --color-navbar-bg: #16202b;
   --color-navbar-text: #f2f5f8;

@@ -141,3 +141,8 @@
   color: var(--color-text-missed);
   font-weight: 600;
 }
+
+/* A perfect Quiz Run: the Quiz Streak it carries over. */
+.end-screen__streak .streak__count {
+  font-weight: 700;
+}

@@ -1,0 +1,111 @@
+/* The Multiplier badge after a Streak: "12 ×2". */
+.streak__multiplier {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: 0.1em;
+}
+
+.streak__multiplier--x2 {
+  background: var(--color-multiplier-x2);
+  color: #3a2c00;
+}
+
+.streak__multiplier--x3 {
+  background: var(--color-multiplier-x3);
+  color: #3a1e00;
+}
+
+.streak__multiplier--x4 {
+  background: var(--color-multiplier-x4);
+  color: #fff;
+}
+
+.streak__multiplier--x5 {
+  background: var(--color-multiplier-x5);
+  color: #fff;
+}
+
+/* The Streak pill, in Quiz and Practice Mode (other pill styles are in quiz-status.css). */
+.pill--streak {
+  position: relative;
+  overflow: hidden;
+  min-width: 72px;
+  font-weight: 600;
+}
+
+/* How far the Streak is towards its next Full Round (the next Multiplier). */
+.pill--streak::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(var(--round-progress, 0) * 100%);
+  height: 3px;
+  background: var(--color-pill-streak);
+  transition: width 0.3s ease-out;
+}
+
+.pill--streak svg {
+  color: var(--color-pill-streak);
+  fill: currentColor;
+  stroke: none;
+}
+
+/* A Milestone (every 10 in a row): a pop with a warm glow. */
+.pill--milestone {
+  animation: pill-milestone 0.8s ease-out;
+}
+
+@keyframes pill-milestone {
+  30% {
+    transform: scale(1.2);
+    box-shadow: 0 0 16px var(--color-pill-streak);
+  }
+}
+
+/* A Full Round: a bigger pop with an orange glow (the fanfare plays along). */
+.pill--full-round {
+  animation: pill-full-round 1s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes pill-full-round {
+  25%,
+  55% {
+    transform: scale(1.45);
+    background: var(--color-pill-streak);
+    box-shadow: 0 0 20px var(--color-pill-streak);
+    color: #fff;
+  }
+}
+
+.pill--full-round svg {
+  animation: pill-full-round-icon 1s ease-out;
+}
+
+@keyframes pill-full-round-icon {
+  25%,
+  55% {
+    color: #fff;
+    transform: rotate(-15deg) scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill--milestone,
+  .pill--full-round,
+  .pill--full-round svg {
+    animation-duration: 0.01s;
+  }
+}
+
+/* Phones and tablets: narrower pills, as in quiz-status.css. */
+@media (max-width: 960px) {
+  .pill--streak {
+    min-width: 54px;
+  }
+}

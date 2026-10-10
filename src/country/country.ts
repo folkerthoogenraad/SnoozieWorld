@@ -6,8 +6,9 @@ import type { GeometryCollection, Topology } from 'topojson-specification'
  * - sovereign: a sovereign state (the 193 UN members plus Vatican City, Kosovo, Taiwan, Palestine and Western Sahara)
  * - territory: an Overseas Territory, belonging to a sovereign state
  * - other: anything else, e.g. Antarctica or unclaimed land like Bir Tawil
+ * - state: a US State, lying on top of the USA; only shown and asked with "Individual states in USA"
  */
-export type CountryKind = 'sovereign' | 'territory' | 'other'
+export type CountryKind = 'sovereign' | 'territory' | 'other' | 'state'
 
 export type Continent = 'Africa' | 'Antarctica' | 'Asia' | 'Europe' | 'North America' | 'Oceania' | 'South America'
 
@@ -29,6 +30,8 @@ export interface Country {
   area: number
   /** True when the Country has a Flag that no other Country shares (Réunion, for example, uses the French flag). */
   distinctFlag: boolean
+  /** For a State: the id of the Country it is part of ("USA"). */
+  stateOf?: string
 }
 
 export type CountryShape = Feature<Polygon | MultiPolygon, Omit<Country, 'id'>> & { id: string }

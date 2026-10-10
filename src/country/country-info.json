@@ -8535,6 +8535,565 @@
       }
     ]
   },
+  "US-AK": {
+    "capital": "Juneau",
+    "capitalPoint": [
+      -134.4197,
+      58.3019
+    ],
+    "population": 733391,
+    "area": 1723337,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-AL": {
+    "capital": "Montgomery",
+    "capitalPoint": [
+      -86.3,
+      32.3668
+    ],
+    "population": 5024279,
+    "area": 135767,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-AR": {
+    "capital": "Little Rock",
+    "capitalPoint": [
+      -92.2896,
+      34.7465
+    ],
+    "population": 3011524,
+    "area": 137732,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-AZ": {
+    "capital": "Phoenix",
+    "capitalPoint": [
+      -112.074,
+      33.4484
+    ],
+    "population": 7151502,
+    "area": 295234,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-CA": {
+    "capital": "Sacramento",
+    "capitalPoint": [
+      -121.4944,
+      38.5816
+    ],
+    "population": 39538223,
+    "area": 423967,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-CO": {
+    "capital": "Denver",
+    "capitalPoint": [
+      -104.9903,
+      39.7392
+    ],
+    "population": 5773714,
+    "area": 269601,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-CT": {
+    "capital": "Hartford",
+    "capitalPoint": [
+      -72.6851,
+      41.7658
+    ],
+    "population": 3605944,
+    "area": 14357,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-DC": {
+    "capital": null,
+    "capitalNote": "It is the city of Washington, the capital of the United States",
+    "capitalPoint": null,
+    "population": 689545,
+    "area": 177,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-DE": {
+    "capital": "Dover",
+    "capitalPoint": [
+      -75.5244,
+      39.1582
+    ],
+    "population": 989948,
+    "area": 6446,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-FL": {
+    "capital": "Tallahassee",
+    "capitalPoint": [
+      -84.2807,
+      30.4383
+    ],
+    "population": 21538187,
+    "area": 170312,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-GA": {
+    "capital": "Atlanta",
+    "capitalPoint": [
+      -84.388,
+      33.749
+    ],
+    "population": 10711908,
+    "area": 153910,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-HI": {
+    "capital": "Honolulu",
+    "capitalPoint": [
+      -157.8583,
+      21.3069
+    ],
+    "population": 1455271,
+    "area": 28313,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-IA": {
+    "capital": "Des Moines",
+    "capitalPoint": [
+      -93.6091,
+      41.5868
+    ],
+    "population": 3190369,
+    "area": 145746,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-ID": {
+    "capital": "Boise",
+    "capitalPoint": [
+      -116.2023,
+      43.615
+    ],
+    "population": 1839106,
+    "area": 216443,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-IL": {
+    "capital": "Springfield",
+    "capitalPoint": [
+      -89.6501,
+      39.7817
+    ],
+    "population": 12812508,
+    "area": 149995,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-IN": {
+    "capital": "Indianapolis",
+    "capitalPoint": [
+      -86.1581,
+      39.7684
+    ],
+    "population": 6785528,
+    "area": 94326,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-KS": {
+    "capital": "Topeka",
+    "capitalPoint": [
+      -95.689,
+      39.0473
+    ],
+    "population": 2937880,
+    "area": 213100,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-KY": {
+    "capital": "Frankfort",
+    "capitalPoint": [
+      -84.8733,
+      38.2009
+    ],
+    "population": 4505836,
+    "area": 104656,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-LA": {
+    "capital": "Baton Rouge",
+    "capitalPoint": [
+      -91.1871,
+      30.4515
+    ],
+    "population": 4657757,
+    "area": 135659,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MA": {
+    "capital": "Boston",
+    "capitalPoint": [
+      -71.0589,
+      42.3601
+    ],
+    "population": 7029917,
+    "area": 27336,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MD": {
+    "capital": "Annapolis",
+    "capitalPoint": [
+      -76.4922,
+      38.9784
+    ],
+    "population": 6177224,
+    "area": 32131,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-ME": {
+    "capital": "Augusta",
+    "capitalPoint": [
+      -69.7795,
+      44.3106
+    ],
+    "population": 1362359,
+    "area": 91633,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MI": {
+    "capital": "Lansing",
+    "capitalPoint": [
+      -84.5555,
+      42.7325
+    ],
+    "population": 10077331,
+    "area": 250487,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MN": {
+    "capital": "Saint Paul",
+    "capitalPoint": [
+      -93.09,
+      44.9537
+    ],
+    "population": 5706494,
+    "area": 225163,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MO": {
+    "capital": "Jefferson City",
+    "capitalPoint": [
+      -92.1735,
+      38.5767
+    ],
+    "population": 6154913,
+    "area": 180540,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MS": {
+    "capital": "Jackson",
+    "capitalPoint": [
+      -90.1848,
+      32.2988
+    ],
+    "population": 2961279,
+    "area": 125438,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-MT": {
+    "capital": "Helena",
+    "capitalPoint": [
+      -112.0391,
+      46.5891
+    ],
+    "population": 1084225,
+    "area": 380831,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NC": {
+    "capital": "Raleigh",
+    "capitalPoint": [
+      -78.6382,
+      35.7796
+    ],
+    "population": 10439388,
+    "area": 139391,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-ND": {
+    "capital": "Bismarck",
+    "capitalPoint": [
+      -100.7837,
+      46.8083
+    ],
+    "population": 779094,
+    "area": 183108,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NE": {
+    "capital": "Lincoln",
+    "capitalPoint": [
+      -96.7026,
+      40.8136
+    ],
+    "population": 1961504,
+    "area": 200330,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NH": {
+    "capital": "Concord",
+    "capitalPoint": [
+      -71.5376,
+      43.2081
+    ],
+    "population": 1377529,
+    "area": 24214,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NJ": {
+    "capital": "Trenton",
+    "capitalPoint": [
+      -74.7429,
+      40.2206
+    ],
+    "population": 9288994,
+    "area": 22591,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NM": {
+    "capital": "Santa Fe",
+    "capitalPoint": [
+      -105.9378,
+      35.687
+    ],
+    "population": 2117522,
+    "area": 314917,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NV": {
+    "capital": "Carson City",
+    "capitalPoint": [
+      -119.7674,
+      39.1638
+    ],
+    "population": 3104614,
+    "area": 286380,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-NY": {
+    "capital": "Albany",
+    "capitalPoint": [
+      -73.7562,
+      42.6526
+    ],
+    "population": 20201249,
+    "area": 141297,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-OH": {
+    "capital": "Columbus",
+    "capitalPoint": [
+      -82.9988,
+      39.9612
+    ],
+    "population": 11799448,
+    "area": 116098,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-OK": {
+    "capital": "Oklahoma City",
+    "capitalPoint": [
+      -97.5164,
+      35.4676
+    ],
+    "population": 3959353,
+    "area": 181037,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-OR": {
+    "capital": "Salem",
+    "capitalPoint": [
+      -123.0351,
+      44.9429
+    ],
+    "population": 4237256,
+    "area": 254799,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-PA": {
+    "capital": "Harrisburg",
+    "capitalPoint": [
+      -76.8867,
+      40.2732
+    ],
+    "population": 13002700,
+    "area": 119280,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-RI": {
+    "capital": "Providence",
+    "capitalPoint": [
+      -71.4128,
+      41.824
+    ],
+    "population": 1097379,
+    "area": 4001,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-SC": {
+    "capital": "Columbia",
+    "capitalPoint": [
+      -81.0348,
+      34.0007
+    ],
+    "population": 5118425,
+    "area": 82933,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-SD": {
+    "capital": "Pierre",
+    "capitalPoint": [
+      -100.351,
+      44.3683
+    ],
+    "population": 886667,
+    "area": 199729,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-TN": {
+    "capital": "Nashville",
+    "capitalPoint": [
+      -86.7816,
+      36.1627
+    ],
+    "population": 6910840,
+    "area": 109153,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-TX": {
+    "capital": "Austin",
+    "capitalPoint": [
+      -97.7431,
+      30.2672
+    ],
+    "population": 29145505,
+    "area": 695662,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-UT": {
+    "capital": "Salt Lake City",
+    "capitalPoint": [
+      -111.891,
+      40.7608
+    ],
+    "population": 3271616,
+    "area": 219882,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-VA": {
+    "capital": "Richmond",
+    "capitalPoint": [
+      -77.436,
+      37.5407
+    ],
+    "population": 8631393,
+    "area": 110787,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-VT": {
+    "capital": "Montpelier",
+    "capitalPoint": [
+      -72.5754,
+      44.2601
+    ],
+    "population": 643077,
+    "area": 24906,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-WA": {
+    "capital": "Olympia",
+    "capitalPoint": [
+      -122.9007,
+      47.0379
+    ],
+    "population": 7705281,
+    "area": 184661,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-WI": {
+    "capital": "Madison",
+    "capitalPoint": [
+      -89.4012,
+      43.0731
+    ],
+    "population": 5893718,
+    "area": 169635,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-WV": {
+    "capital": "Charleston",
+    "capitalPoint": [
+      -81.6326,
+      38.3498
+    ],
+    "population": 1793716,
+    "area": 62756,
+    "partOf": "USA",
+    "funFacts": []
+  },
+  "US-WY": {
+    "capital": "Cheyenne",
+    "capitalPoint": [
+      -104.8202,
+      41.14
+    ],
+    "population": 576851,
+    "area": 253335,
+    "partOf": "USA",
+    "funFacts": []
+  },
   "USA": {
     "capital": "Washington, D.C.",
     "capitalPoint": [

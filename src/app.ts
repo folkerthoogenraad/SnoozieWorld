@@ -6,11 +6,15 @@ import { WorldMap } from './map/world-map.ts'
 import type { Mode } from './mode.ts'
 import { Navbar } from './navbar/navbar.ts'
 import { PauseScreen } from './pause-screen/pause-screen.ts'
+import { PracticeMode } from './practice/practice-mode.ts'
+import { loadSkillProgress, loadStreak } from './practice/practice-progress.ts'
+import { PracticeRun } from './practice/practice-run.ts'
 import { EndScreen } from './quiz/end-screen.ts'
 import { QuizMode } from './quiz/quiz-mode.ts'
 import { QuizRun } from './quiz/quiz-run.ts'
+import { loadQuizStreak } from './quiz/quiz-streak.ts'
 import { clearQuizSession, hasQuizSession, loadQuizSession } from './quiz/quiz-session.ts'
-import { activeModifiers, quizCountries, quizRules, type QuizSettings } from './quiz/quiz-settings.ts'
+import { activeModifiers, practiceSettings, quizCountries, quizRules, type QuizSettings } from './quiz/quiz-settings.ts'
 import { SoundPlayer } from './sound/sound-player.ts'
 import { createSoundToggle } from './sound/sound-toggle.ts'
 import { StartScreen } from './start-screen/start-screen.ts'
@@ -22,7 +26,7 @@ const FAILED_END_SCREEN_DELAY = 1800
 
 /**
  * Composes the Navbar, the Map and the screens, and switches between Explore
- * Mode and Quiz Runs. While a Quiz Run is active, the Navbar title opens the
+ * Mode, Practice Mode and Quiz Runs. While a Quiz Run is active, the Navbar title opens the
  * Pause Screen instead of the Start Screen; after a reload, a saved Quiz
  * Session is restored and the Pause Screen shown.
  */
@@ -37,8 +41,12 @@ export class App {
   private readonly countryInfo = new CountryInfoDialog()
   private readonly startScreen = new StartScreen({
     onExplore: () => this.explore(),
-    onStartQuiz: (settings) =>
-      this.startQuiz(settings, QuizRun.start(quizCountries(settings, this.countries), quizRules(settings))),
+    onPractice: (settings) => this.practice(settings),
+    onStartQuiz: (settings) => {
+      const countries = quizCountries(settings, this.countries)
+      const streak = loadQuizStreak(settings, countries.length)
+      this.startQuiz(settings, QuizRun.start(countries, quizRules(settings), streak))
+    },
   })
   private readonly pauseScreen = new PauseScreen({
     onContinue: () => this.activeQuiz()?.resume(),
@@ -111,6 +119,25 @@ export class App {
 
   private explore(): void {
     this.switchMode(new ExploreMode({ map: this.map, navbar: this.navbar, countryInfo: this.countryInfo }))
+  }
+
+  private practice(chosen: QuizSettings): void {
+    const settings = practiceSettings(chosen)
+    this.switchMode(
+      new PracticeMode({
+        map: this.map,
+        navbar: this.navbar,
+        settings,
+        run: PracticeRun.start(
+          quizCountries(settings, this.countries),
+          loadSkillProgress(settings),
+          loadStreak(settings),
+        ),
+        allCountries: this.countries,
+        sounds: this.sounds,
+        countryInfo: this.countryInfo,
+      }),
+    )
   }
 
   private startQuiz(settings: QuizSettings, run: QuizRun, elapsedMs = 0): void {

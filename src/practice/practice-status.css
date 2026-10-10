@@ -1,0 +1,16 @@
+/* The Learned pill; the Streak pill is in streak.css, the other pill styles in quiz-status.css. */
+.pill--learned {
+  min-width: 92px;
+}
+
+.pill--learned svg {
+  color: var(--color-pill-learned);
+  stroke-width: 1.6;
+}
+
+/* Phones and tablets: narrower pills, as in quiz-status.css. */
+@media (max-width: 960px) {
+  .pill--learned {
+    min-width: 70px;
+  }
+}

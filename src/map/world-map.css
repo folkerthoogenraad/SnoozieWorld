@@ -25,6 +25,13 @@
   fill: var(--color-ocean);
 }
 
+/* US States lie on top of the USA; WorldMap.setStatesShown shows them instead of it. */
+.map:not(.map--us-states) .map__country--us-state,
+.map:not(.map--us-states) .map__capital-dot--us-state,
+.map--us-states .map__country--has-states {
+  display: none;
+}
+
 /* A Country is drawn by its path and, when tiny, its marker. The state
    classes below go on both and only change --country-fill. */
 .map__country,

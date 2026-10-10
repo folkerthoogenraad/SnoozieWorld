@@ -24,11 +24,13 @@ type StoredLeaderboards = Record<string, LeaderboardEntry[]>
 
 /**
  * Each combination of Categories and Game Mode has its own Leaderboard, with
- * the top 10 Scores. Modifiers don't get their own Leaderboard: each entry
+ * the top 10 Scores. "Individual states in USA" counts as a Category: it
+ * adds `|us-states` to the key. Modifiers don't get their own Leaderboard: each entry
  * shows the Modifiers it was played with. Stored in this browser only (localStorage).
  */
 export function leaderboardKey(settings: QuizSettings): string {
-  return `${settings.gameModeId}|${[...settings.categoryIds].sort().join(',')}`
+  const key = `${settings.gameModeId}|${[...settings.categoryIds].sort().join(',')}`
+  return settings.usStates ? `${key}|us-states` : key
 }
 
 export function loadLeaderboard(settings: QuizSettings): LeaderboardEntry[] {

@@ -1,36 +1,34 @@
 import type { CountryInfoDialog } from '../country-info/country-info-dialog.ts'
-import { countryInfo } from '../country/country-info.ts'
-import { createCountryLabel } from '../country/country-label.ts'
 import type { Country } from '../country/country.ts'
 import type { MapPoint, WorldMap } from '../map/world-map.ts'
 import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
 import type { SoundPlayer } from '../sound/sound-player.ts'
+import { AnswerFeedback } from './answer-feedback.ts'
 import type { QuizRun } from './quiz-run.ts'
 import { saveQuizSession } from './quiz-session.ts'
-import type { QuizSettings } from './quiz-settings.ts'
+import { promptInfoGivesAnswer, type QuizSettings } from './quiz-settings.ts'
 import { QuizStatus } from './quiz-status.ts'
+import { saveQuizStreak } from './quiz-streak.ts'
 import { Stopwatch } from './stopwatch.ts'
-
-// Wrong clicks while a Confirm is due before the Map Notice (with its Focus button) appears.
-const CLICKS_BEFORE_HINT = 2
 
 /**
  * Plays a Quiz Run on the Map. Countries outside the Quiz Set are Excluded,
  * and the Navbar shows the Quiz Progress and Prompt. Clicking a Country answers:
  * - right on the first Try: the Country turns Correct (white);
  * - right on the second Try: Half Correct (yellow);
- * - wrong: the clicked Country flashes, and (unless the Hints Modifier is off)
- *   a Hint names it. After the last wrong Try the Prompt turns Missed (red)
- *   and pulses, and the player must click it (Confirm) before the next Prompt.
- *   If they click elsewhere twice, a Map Notice names the Country and offers a
- *   Focus button that pans the Map to it. Under Sudden Death a Missed Prompt
- *   ends the Quiz Run instead.
+ * - wrong: the clicked Country flashes. After the last wrong Try the Prompt
+ *   turns Missed (red) and pulses, and the player must click it (Confirm)
+ *   before the next Prompt. Under Sudden Death a Missed Prompt ends the Quiz
+ *   Run instead.
+ * Hints, the Map Notice and Sound Effects come from AnswerFeedback.
  * With Hints on, the player can also click the Prompt in the Navbar for its
  * Country Info; the Session Time stops while that is open. With Hints off,
- * clicking it only says so. In Capital to Location the Prompt is not
- * clickable: its Country Info would name the Country.
- * Each outcome also gets a Quiz Progress animation and a Sound Effect.
+ * clicking it only says so. In Capital to Location and with Flag only the
+ * Prompt is not clickable: its Country Info would give the answer away.
+ * Each outcome also gets a Quiz Progress animation. The Quiz Streak plays a
+ * chime every 10 and a fanfare for a perfect Quiz Run, which carries the
+ * Streak over to the next Quiz Run with the same Leaderboard; a wrong Try ends it.
  *
  * Keeps the Session Time (paused while the Pause Screen is open or the page is
  * hidden) and saves the Quiz Session after every Try and when the page is left.
@@ -43,14 +41,13 @@ export class QuizMode implements Mode {
   private readonly navbar: Navbar
   private readonly allCountries: readonly Country[]
   private readonly onFinished: (run: QuizRun, elapsedMs: number) => void
-  private readonly sounds: SoundPlayer
   private readonly countryInfo: CountryInfoDialog
+  private readonly sounds: SoundPlayer
+  private readonly feedback: AnswerFeedback
   private readonly status: QuizStatus
   private readonly stopwatch: Stopwatch
   private stopListening: (() => void)[] = []
   private paused = false
-  /** Wrong clicks since the current Prompt was Missed. */
-  private clicksWhileConfirmDue = 0
 
   constructor(options: {
     map: WorldMap
@@ -70,14 +67,14 @@ export class QuizMode implements Mode {
     this.run = options.run
     this.allCountries = options.allCountries
     this.onFinished = options.onFinished
-    this.sounds = options.sounds
     this.countryInfo = options.countryInfo
-    const { gameModeId, modifiers } = options.settings
+    this.sounds = options.sounds
+    this.feedback = new AnswerFeedback(options.map, options.sounds, options.settings)
     this.status = new QuizStatus(
       options.settings,
-      gameModeId === 'capital-to-location'
+      promptInfoGivesAnswer(options.settings)
         ? null
-        : modifiers.hints === 'hints'
+        : options.settings.modifiers.hints === 'hints'
           ? (country) => this.showCountryInfo(country)
           : () => this.status.showPromptNotice('Hints are disabled'),
     )
@@ -103,6 +100,7 @@ export class QuizMode implements Mode {
 
   start(): void {
     this.map.clearCountryStates()
+    this.map.setStatesShown(this.settings.usStates)
     for (const country of this.allCountries) {
       if (!this.run.includes(country)) this.map.setCountryState(country.id, 'excluded')
     }
@@ -131,8 +129,8 @@ export class QuizMode implements Mode {
     this.stopListening = []
     this.map.clearCountryStates()
     this.map.setHighlightedCountry(null)
-    this.map.setNotice(null)
-    this.map.hideHint()
+    this.map.setStatesShown(false)
+    this.feedback.clear()
     this.navbar.setStatus(null)
   }
 
@@ -141,76 +139,21 @@ export class QuizMode implements Mode {
     if (!country || !this.run.includes(country) || this.run.finished) return
 
     const outcome = this.run.answer(country)
-    const promptId = outcome.prompt.id
-    switch (outcome.kind) {
-      case 'correct':
-      case 'half-correct':
-        this.map.setCountryState(promptId, outcome.kind)
-        this.map.hideHint()
-        this.sounds.play(outcome.kind)
-        break
-      case 'try-again':
-        this.map.flashWrong(country.id)
-        this.showHint(country, point)
-        this.sounds.play('wrong')
-        break
-      case 'missed':
-        this.map.flashWrong(country.id)
-        this.showHint(country, point)
-        this.sounds.play('wrong')
-        this.map.setCountryState(promptId, 'missed')
-        this.map.setPulsingCountry(promptId)
-        this.clicksWhileConfirmDue = 0
-        break
-      case 'confirm-needed':
-        this.map.flashWrong(country.id)
-        this.showHint(country, point)
-        if (++this.clicksWhileConfirmDue === CLICKS_BEFORE_HINT) {
-          this.map.setNotice({
-            text: `${this.missedText(outcome.prompt)} Click the flashing country to continue.`,
-            action: { label: 'Focus', onClick: () => this.map.showCountry(promptId) },
-          })
-        }
-        break
-      case 'confirmed':
-        this.map.setPulsingCountry(null)
-        this.map.setNotice(null)
-        this.map.hideHint()
-        this.sounds.play('next')
-        break
+    this.feedback.show(outcome, country, point)
+    if (outcome.kind === 'correct' || outcome.kind === 'half-correct') {
+      this.map.setCountryState(outcome.prompt.id, outcome.kind)
     }
+    if (this.run.reward) this.sounds.play(this.run.reward)
     this.status.update(this.run)
-    this.status.animate(outcome)
+    this.status.animate(outcome, this.run)
+    if (outcome.kind === 'try-again' || outcome.kind === 'missed') saveQuizStreak(this.settings, 0)
     if (this.run.finished) {
+      saveQuizStreak(this.settings, this.run.perfect ? this.run.streak : 0)
       this.stopwatch.pause()
       this.onFinished(this.run, this.stopwatch.elapsedMs)
     } else {
       this.save()
     }
-  }
-
-  /** "Missed: Chile.", or "Missed: Santiago is in Chile." when quizzing capitals. */
-  private missedText(prompt: Country): string {
-    const capital = countryInfo(prompt)?.capital
-    return this.settings.gameModeId === 'capital-to-location' && capital
-      ? `Missed: ${capital} is in ${prompt.name}.`
-      : `Missed: ${prompt.name}.`
-  }
-
-  /** The Hint for a wrong Try: the clicked Country and its capital. */
-  private showHint(country: Country, point: MapPoint): void {
-    if (this.settings.modifiers.hints === 'no-hints') return
-    const content = document.createDocumentFragment()
-    content.append(createCountryLabel(country))
-    const capital = countryInfo(country)?.capital
-    // When quizzing capitals, "No capital" explains why it's never asked.
-    if (capital || this.settings.gameModeId === 'capital-to-location') {
-      const detail = document.createElement('span')
-      detail.className = 'map__hint-detail'
-      detail.textContent = capital ? `Capital: ${capital}` : 'No capital'
-      content.append(detail)
-    }
-    this.map.showHint(content, point)
   }
 
   /** Country Info for the Prompt (Hints on). The Session Time stops while it is open. */

@@ -1,5 +1,5 @@
-/** The Sound Effects played during a Quiz Run. */
-export type SoundEffect = 'correct' | 'half-correct' | 'wrong' | 'next'
+/** The Sound Effects played during a Quiz Run or Practice Mode. */
+export type SoundEffect = 'correct' | 'half-correct' | 'wrong' | 'next' | 'milestone' | 'full-round'
 
 const STORAGE_KEY = 'snoozieworld.soundMuted'
 const MASTER_VOLUME = 0.6
@@ -37,6 +37,25 @@ const EFFECTS: Record<SoundEffect, { tones: Tone[]; lowpass?: number }> = {
   // A short, soft, neutral blip: confirms a Missed Prompt and moves on.
   next: {
     tones: [{ frequency: 587.3, type: 'sine', start: 0, duration: 0.14, volume: 0.18 }],
+  },
+  // A soft, sparkly chime: two high bell tones (G6, C7). Played over the Correct pling.
+  milestone: {
+    tones: [
+      { frequency: 1568, type: 'sine', start: 0.1, duration: 0.45, volume: 0.13 },
+      { frequency: 2093, type: 'sine', start: 0.19, duration: 0.6, volume: 0.13 },
+      { frequency: 4186, type: 'sine', start: 0.19, duration: 0.25, volume: 0.03 },
+    ],
+  },
+  // A little fanfare: a rising C major arpeggio, ending on a held chord. Played over the Correct pling.
+  'full-round': {
+    tones: [
+      { frequency: 523.3, type: 'triangle', start: 0.12, duration: 0.18, volume: 0.2 },
+      { frequency: 659.3, type: 'triangle', start: 0.21, duration: 0.18, volume: 0.2 },
+      { frequency: 784, type: 'triangle', start: 0.3, duration: 0.18, volume: 0.2 },
+      { frequency: 1046.5, type: 'triangle', start: 0.39, duration: 0.7, volume: 0.22 },
+      { frequency: 784, type: 'sine', start: 0.39, duration: 0.7, volume: 0.1 },
+      { frequency: 2093, type: 'sine', start: 0.39, duration: 0.4, volume: 0.05 },
+    ],
   },
 }
 

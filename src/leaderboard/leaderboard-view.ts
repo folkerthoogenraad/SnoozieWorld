@@ -10,11 +10,13 @@ import './leaderboard.css'
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 
 /**
- * "Europe, Asia · Name to Location", and with `withModifiers` the Modifiers
+ * "Europe, Asia · Name to Location" (with "US states" when its checkbox is
+ * ticked), and with `withModifiers` the Modifiers
  * that aren't at their default: "Europe · Name to Location · Flag only, Sudden death".
  */
 export function describeQuizSettings(settings: QuizSettings, withModifiers = false): string {
   const categories = CATEGORIES.filter((c) => settings.categoryIds.includes(c.id)).map((c) => c.label)
+  if (settings.usStates) categories.push('US states')
   const parts = [categories.length ? categories.join(', ') : 'No categories', gameModeById(settings.gameModeId).label]
   const modifiers = changedModifiers(settings.gameModeId, settings.modifiers).map((id) =>
     modifierState(id, settings.modifiers).label,

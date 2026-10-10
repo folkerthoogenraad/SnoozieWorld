@@ -58,7 +58,8 @@
   margin-right: -8px;
 }
 
-@media (max-width: 600px) {
+/* Phones and tablets: the Quiz Progress doesn't fit next to the title and a full-width Prompt. */
+@media (max-width: 960px) {
   .navbar {
     grid-template-columns: auto 1fr auto;
     gap: 10px;
@@ -72,7 +73,7 @@
     margin-left: -6px;
   }
 
-  /* Only the globe on phones, leaving room for the Prompt. */
+  /* Only the globe, leaving room for the Prompt. */
   .navbar__title-text {
     display: none;
   }

@@ -1,6 +1,7 @@
 // Builds the Country dataset used by the Map.
 //
-// Source: Natural Earth 1:10m Admin 0 – Countries and Map Units (public domain).
+// Source: Natural Earth 1:10m Admin 0 – Countries and Map Units, and Admin 1 –
+// States, Provinces (public domain).
 // https://www.naturalearthdata.com/about/terms-of-use/
 //
 // Countries are Natural Earth's Admin 0 Countries, except that:
@@ -9,6 +10,11 @@
 //   Units dataset;
 // - small disputed or leased areas are merged into the Country that holds
 //   them (e.g. Somaliland into Somalia), so they don't show up as gaps in a Quiz.
+//
+// The US States (Admin 1) are added as extra Countries of kind "state", lying
+// on top of the USA. The Map only shows them, instead of the USA, during a Quiz
+// with "Individual states in USA". Admin 1 borders match Admin 0 exactly, so
+// the States share their arcs with the USA and its neighbours.
 //
 // Usage: npm run build:map-data
 // Output: public/data/countries.topo.json
@@ -98,6 +104,12 @@ const NAME_OVERRIDES = {
   CXR: 'Christmas Island',
 }
 
+// The Country whose States are added, and the names that clash with a Country's.
+const STATES_OF = 'USA'
+const STATE_NAME_OVERRIDES = {
+  'US-GA': 'Georgia (US state)',
+}
+
 async function loadSource(name) {
   const path = join(cacheDir, `${name}.geojson`)
   if (!existsSync(path)) {
@@ -130,6 +142,22 @@ function countryProperties(id, p, kind = kindOf(id, p)) {
     continent: CONTINENT_OVERRIDES[id] ?? p.CONTINENT,
     subregion: p.SUBREGION,
     labelPoint: [p.LABEL_X, p.LABEL_Y],
+  }
+}
+
+// A US State, keyed by its ISO 3166-2 code (e.g. "US-CA"). States have no Flag.
+function stateProperties(id, p) {
+  const country = admin0Properties.get(STATES_OF)
+  return {
+    name: STATE_NAME_OVERRIDES[id] ?? p.name,
+    kind: 'state',
+    isoA2: null,
+    isoA3: null,
+    sovereign: p.sov_a3,
+    continent: country.CONTINENT,
+    subregion: country.SUBREGION,
+    labelPoint: [p.longitude, p.latitude],
+    stateOf: STATES_OF,
   }
 }
 
@@ -186,6 +214,7 @@ function protectTinyCountries(topo, features) {
 
 const admin0 = await loadSource('ne_10m_admin_0_countries')
 const mapUnits = await loadSource('ne_10m_admin_0_map_units')
+const admin1 = await loadSource('ne_10m_admin_1_states_provinces')
 
 const admin0Properties = new Map(admin0.features.map((f) => [f.properties.ADM0_A3, f.properties]))
 
@@ -224,6 +253,12 @@ for (const [adminId, geometries] of unitGeometries) {
   }
 }
 
+for (const f of admin1.features) {
+  if (f.properties.adm0_a3 !== STATES_OF) continue
+  const id = f.properties.iso_3166_2
+  features.push({ type: 'Feature', id, properties: stateProperties(id, f.properties), geometry: f.geometry })
+}
+
 const ids = new Set()
 for (const f of features) {
   if (ids.has(f.id)) throw new Error(`Duplicate Country id ${f.id}`)
@@ -246,5 +281,5 @@ for (const arc of topo.arcs) points += arc.length
 const kinds = Object.groupBy(features, (f) => f.properties.kind)
 console.log(
   `Wrote ${features.length} Countries (${kinds.sovereign.length} sovereign, ${kinds.territory.length} territories, ` +
-    `${kinds.other.length} other) to ${outputPath} (${points} points, ${(json.length / 1024).toFixed(0)} KiB)`,
+    `${kinds.other.length} other, ${kinds.state.length} states) to ${outputPath} (${points} points, ${(json.length / 1024).toFixed(0)} KiB)`,
 )

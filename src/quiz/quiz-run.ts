@@ -1,4 +1,5 @@
 import type { Country } from '../country/country.ts'
+import { streakReward, type StreakReward } from '../streak/streak.ts'
 
 /** How a Prompt ended: found on the first Try, on the second Try, or not at all. */
 export type PromptResult = 'correct' | 'half-correct' | 'missed'
@@ -42,6 +43,8 @@ export interface QuizRunSnapshot {
   index: number
   wrongTries: number
   confirmNeeded: boolean
+  /** The Quiz Streak carried over from earlier perfect Quiz Runs; missing in older sessions. */
+  startStreak?: number
 }
 
 const PROMPT_RESULTS: readonly PromptResult[] = ['correct', 'half-correct', 'missed']
@@ -52,6 +55,9 @@ const PROMPT_RESULTS: readonly PromptResult[] = ['correct', 'half-correct', 'mis
  * Death); after the last wrong Try the Prompt is Missed and must be Confirmed
  * by clicking it before moving on. Under Sudden Death a Missed Prompt fails
  * the Quiz Run: it is finished right away.
+ * The Quiz Streak counts Prompts found on the first Try in a row; a Quiz Run
+ * can start with the Streak of earlier perfect ones (a multiple of the Quiz
+ * Set's size). It gives a Milestone every 10 and a Full Round when perfect.
  * Knows nothing about the screen.
  */
 export class QuizRun {
@@ -64,10 +70,12 @@ export class QuizRun {
   private confirmNeeded = false
   private hasFailed = false
   private readonly records: PromptRecord[] = []
+  private readonly startStreak: number
+  private lastReward: StreakReward | null = null
 
-  /** Starts a new Quiz Run over the given Countries, in random order. */
-  static start(countries: readonly Country[], rules: QuizRules = DEFAULT_RULES): QuizRun {
-    return new QuizRun(shuffle(countries), rules)
+  /** Starts a new Quiz Run over the given Countries, in random order, continuing a Quiz Streak. */
+  static start(countries: readonly Country[], rules: QuizRules = DEFAULT_RULES, startStreak = 0): QuizRun {
+    return new QuizRun(shuffle(countries), rules, startStreak)
   }
 
   /** Restores a saved Quiz Run, or returns null when the snapshot doesn't fit the Countries (e.g. new map data). */
@@ -78,7 +86,9 @@ export class QuizRun {
   ): QuizRun | null {
     const quizSet = snapshot.quizSetIds.map((id) => countries.get(id))
     if (!quizSet.length || quizSet.some((country) => !country)) return null
-    const run = new QuizRun(quizSet as Country[], rules)
+    const startStreak = snapshot.startStreak ?? 0
+    if (!Number.isInteger(startStreak) || startStreak < 0) return null
+    const run = new QuizRun(quizSet as Country[], rules, startStreak)
     const { records, index, wrongTries, confirmNeeded } = snapshot
     const expectedRecords = index + (confirmNeeded ? 1 : 0)
     if (!Number.isInteger(index) || index < 0 || index >= quizSet.length) return null
@@ -96,9 +106,10 @@ export class QuizRun {
     return run
   }
 
-  private constructor(quizSet: readonly Country[], rules: QuizRules) {
+  private constructor(quizSet: readonly Country[], rules: QuizRules, startStreak: number) {
     this.quizSet = quizSet
     this.rules = rules
+    this.startStreak = startStreak
     this.quizSetIds = new Set(quizSet.map((country) => country.id))
   }
 
@@ -109,6 +120,7 @@ export class QuizRun {
       index: this.index,
       wrongTries: this.wrongTries,
       confirmNeeded: this.confirmNeeded,
+      startStreak: this.startStreak,
     }
   }
 
@@ -146,6 +158,26 @@ export class QuizRun {
     return this.records
   }
 
+  /**
+   * The Quiz Streak: Prompts found on the first Try in a row, plus the carried
+   * Streak while every Prompt so far was Correct. A wrong Try ends it.
+   */
+  get streak(): number {
+    if (this.wrongTries > 0) return 0
+    const trailing = this.records.length - 1 - this.records.findLastIndex((record) => record.result !== 'correct')
+    return trailing === this.records.length ? this.startStreak + trailing : trailing
+  }
+
+  /** True when every Prompt was found on the first Try. */
+  get perfect(): boolean {
+    return this.finished && !this.hasFailed && this.count('correct') === this.quizSet.length
+  }
+
+  /** What the last Answer's Streak earned: a Full Round (a perfect Quiz Run), a Milestone, or nothing. */
+  get reward(): StreakReward | null {
+    return this.lastReward
+  }
+
   count(result: PromptResult): number {
     return this.records.filter((record) => record.result === result).length
   }
@@ -172,6 +204,7 @@ export class QuizRun {
     const prompt = this.prompt
     if (!prompt) throw new Error('The Quiz Run is already finished')
     const isPrompt = country.id === prompt.id
+    this.lastReward = null
 
     if (this.confirmNeeded) {
       if (!isPrompt) return { kind: 'confirm-needed', prompt }
@@ -182,6 +215,7 @@ export class QuizRun {
       const result = this.wrongTries === 0 ? 'correct' : 'half-correct'
       this.records.push({ country: prompt, result })
       this.next()
+      if (result === 'correct') this.lastReward = streakReward(this.streak, this.quizSet.length)
       return { kind: result, prompt }
     }
     this.wrongTries++
@@ -208,7 +242,7 @@ function scoreOf(records: readonly PromptRecord[], outOf: number): number {
 }
 
 /** Fisher–Yates shuffle into a new array. */
-function shuffle<T>(items: readonly T[]): T[] {
+export function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items]
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))

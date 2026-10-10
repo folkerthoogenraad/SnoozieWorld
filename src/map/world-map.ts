@@ -72,7 +72,8 @@ type Bounds = [[number, number], [number, number]]
  * The Map: the world map that takes up the screen below the Navbar.
  * Every Country is drawn as one SVG path; the Ocean is the area behind them.
  * Countries too small to click get a Tiny Country Marker, and every capital a
- * Capital Dot. Scrolling or pinching zooms, dragging with the left or middle
+ * Capital Dot. The US States lie on top of the USA, hidden until
+ * `setStatesShown`. Scrolling or pinching zooms, dragging with the left or middle
  * mouse button (or one finger) pans. Panning left or right never ends: the
  * world repeats.
  *
@@ -152,6 +153,14 @@ export class WorldMap {
     this.highlightedCountryId = null
     this.selectedCountryId = null
     this.pulsingCountryId = null
+    const hasStates = new Set(shapes.map((shape) => shape.properties.stateOf))
+    // US States are hidden unless shown instead of the USA (see setStatesShown).
+    const stateClass = (shape: CountryShape) =>
+      shape.properties.kind === 'state'
+        ? ' map__country--us-state'
+        : hasStates.has(shape.id)
+          ? ' map__country--has-states'
+          : ''
 
     // Copy 0 is drawn first, then cloned for the other copies.
     const countries = document.createElementNS(SVG_NS, 'g')
@@ -159,7 +168,7 @@ export class WorldMap {
       .selectAll('path')
       .data(shapes)
       .join('path')
-      .attr('class', 'map__country')
+      .attr('class', (d) => `map__country${stateClass(d)}`)
       .attr('data-country-id', (d) => d.id)
       .attr('d', (d) => path(d))
 
@@ -171,7 +180,8 @@ export class WorldMap {
       const [cx, cy] = (point && this.projection(point)) || []
       if (cx === undefined || cy === undefined) continue
       const dot = document.createElementNS(SVG_NS, 'circle')
-      dot.setAttribute('class', 'map__capital-dot')
+      const stateDot = shape.properties.kind === 'state' ? ' map__capital-dot--us-state' : ''
+      dot.setAttribute('class', `map__capital-dot${stateDot}`)
       dot.setAttribute('cx', cx.toFixed(4))
       dot.setAttribute('cy', cy.toFixed(4))
       capitals.append(dot)
@@ -187,11 +197,12 @@ export class WorldMap {
       .selectAll('g')
       .data(tiny)
       .join((enter) => {
-        const g = enter.append('g').attr('class', 'map__marker')
+        const g = enter.append('g')
         g.append('circle').attr('class', 'map__marker-hit')
         g.append('circle').attr('class', 'map__marker-dot')
         return g
       })
+      .attr('class', (d) => `map__marker${stateClass(d)}`)
       .attr('data-country-id', (d) => d.id)
       .each((d, i, nodes) => {
         const [cx, cy] = this.projection(d.properties.labelPoint) ?? [0, 0]
@@ -262,6 +273,14 @@ export class WorldMap {
     if (!countryId) return
     this.toggleClass(countryId, 'map__country--selected', true)
     this.bringToFront(countryId)
+  }
+
+  /**
+   * Shows the US States instead of the USA (during a Quiz with "Individual
+   * states in USA"), or the USA as one Country again.
+   */
+  setStatesShown(shown: boolean): void {
+    this.element.classList.toggle('map--us-states', shown)
   }
 
   setCountryState(countryId: string, state: CountryState | null): void {

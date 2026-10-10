@@ -16,15 +16,24 @@ src/
   country/country-info.json Country Info data, hand-maintained (see below)
   country-info/             Country Info dialog, and the Navbar button (ⓘ) that opens it
   explore/explore-mode.ts   Explore Mode
+  practice/practice-run.ts  Practice Run: spaced repetition (Levels), Streak (no DOM)
+  practice/practice-progress.ts  Practice Progress storage (Levels per Skill, Streaks per Practice Set)
+  practice/practice-mode.ts Practice Mode: plays a Practice Run on the Map and Navbar
+  practice/practice-status.ts  Navbar content in Practice Mode (Streak and Learned pills + Prompt)
   quiz/category.ts          Categories
   quiz/game-mode.ts         Game Modes
   quiz/modifier.ts          Modifiers, their States and icons
-  quiz/quiz-settings.ts     Quiz Settings, picking the Quiz Set's Countries, Quiz Rules, upgrading old settings
+  quiz/quiz-settings.ts     Quiz Settings, picking the Quiz Set's Countries (incl. US States), Quiz Rules,
+                            Practice settings, upgrading old settings
   quiz/quiz-run.ts          Quiz Run: shuffle, Prompts, Tries, Prompt Results, Score, snapshot/restore (no DOM)
   quiz/quiz-session.ts      Quiz Session: saving/restoring the active Quiz Run (localStorage)
   quiz/stopwatch.ts         Session Time clock and duration formatting
   quiz/quiz-mode.ts         Quiz Mode: plays a Quiz Run on the Map and Navbar
   quiz/quiz-status.ts       Navbar content during a Quiz Run (Quiz Progress pills + Prompt)
+  quiz/prompt-view.ts       The Prompt in the Navbar, shared by Quiz and Practice Mode
+  quiz/quiz-streak.ts       Quiz Streak carried over between perfect Quiz Runs (localStorage)
+  streak/streak.ts          Streak rewards (Milestone, Full Round), Multiplier badge, flame icon; Quiz and Practice
+  quiz/answer-feedback.ts   Hints, Map Notice and Sound Effects for an Answer, shared by Quiz and Practice Mode
   quiz/end-screen.ts        End Screen modal
   pause-screen/             Pause Screen modal
   leaderboard/leaderboard.ts       Leaderboard storage (localStorage)
@@ -46,7 +55,7 @@ vite.config.ts              dev/preview servers listen on the LAN (for testing o
 
 ## Modes
 
-`App` holds exactly one `Mode` (`ExploreMode` or `QuizMode`) and switches with `switchMode`: the old Mode's
+`App` holds exactly one `Mode` (`ExploreMode`, `PracticeMode` or `QuizMode`) and switches with `switchMode`: the old Mode's
 `stop()` must undo everything its `start()` did (listeners, Country States, Navbar Status). Modes drive the Map
 through its small API; the Map knows nothing about Modes:
 
@@ -58,6 +67,8 @@ through its small API; the Map knows nothing about Modes:
 - `flashWrong(id)`: one-off CSS animation; `setPulsingCountry(id | null)`: endless animation until cleared.
 - `showCountry(id)`: animated pan (d3-transition) that brings the whole Country on screen. It zooms out only if
   needed, and is clamped to the world's edges. Used by the Focus button.
+- `setStatesShown(shown)`: shows the US States instead of the USA (see Country dataset). Quiz and Practice Mode
+  turn it on when `settings.usStates`, and off in `stop()`.
 - `setNotice({ text, action? } | null)`: the Map Notice. It stops pointer, touch and wheel events, so pressing its
   button doesn't pan the Map. `setPulsingCountry` and `setSelectedCountry` also move the paths to the end of their
   group, so they are drawn on top.
@@ -65,7 +76,10 @@ through its small API; the Map knows nothing about Modes:
   re-placed on every zoom event, so it follows the Map. Placed above the point (below near the top edge), pushed
   inside the Map sideways with its arrow still on the point. `pointer-events: none`, so it never blocks a click.
 
-The quiz logic lives in `QuizRun`, which has no DOM. `QuizMode` connects it to the Map and Navbar. Countries
+The quiz logic lives in `QuizRun`, which has no DOM. `QuizMode` connects it to the Map and Navbar. What the Map
+and speakers do for an Answer (flash, Hint, Missed + Pulsing, Map Notice after two wrong clicks while a Confirm is
+due, Sound Effects) is `AnswerFeedback`, shared with `PracticeMode`; the Modes only colour the found Prompts.
+With Flag only, `AnswerFeedback` also shows a Hint naming the Prompt once it is found or Confirmed (feedback 10). Countries
 are compared by `id`, because the Map and the App each create their own `Country` objects.
 
 `QuizMode` owns the Session Time (`Stopwatch`) and saves the Quiz Session after every Try, on `pause()`, when
@@ -80,6 +94,41 @@ discarded, e.g. after a map data change.
 When a Quiz Run is finished, `App.finishQuiz` clears the Quiz Session, adds a Leaderboard Entry and opens the End
 Screen after a short delay. Entry ids
 avoid `crypto.randomUUID()`, which is unavailable on plain-http LAN addresses (phone testing).
+
+## Practice Mode
+
+Started from the Start Screen's Explore split button. `practiceSettings(settings)` resets every Modifier to its
+default except Flag, so a `PracticeRun` (no DOM) always gives two Tries.
+
+**Scheduling** (after feedback on request 10: a missed Country came back too rarely in a big set) is a Leitner
+system spaced in Prompts rather than days. Each seen Country has a Level 0–5 and a `due` value on the Skill
+Clock (`SkillProgress.clock`, +1 per Prompt). A finished Prompt sets its Level: right on the first Try +1 (a new
+Country straight to 3, Learned: the player already knew it), right on the second Try unchanged, Missed 0. It is
+due again after `INTERVALS[level]` = 3, 6, 12, 25, 50, 100 Prompts, ±25% jitter, at least 2. Next Prompt: the most
+overdue Country; if none is due, a random unseen one while the Working Set (Countries at Level 0–1) is under 5;
+otherwise the one due soonest. Never the same Country twice in a row. `promptNumber` lets the `PromptView` fade in
+a Country asked again.
+
+**Practice Progress** (feedback 11) lives in `localStorage['snoozieworld.practice']`:
+`{ version: 1, skills: { [skillKey]: { clock, levels: { [countryId]: { level, due } } } }, streaks: { [practiceSetKey]: { current, best } } }`.
+`skillKey` is the Game Mode plus the Flag State (`name-to-location|flag-only`), so Levels carry over between
+Practice Sets; `practiceSetKey` adds the sorted Categories and `|us-states`, so every Practice Set keeps its own
+live and best Streak. `PracticeRun` changes the loaded objects in place and `PracticeMode` saves them after every
+Try, so leaving (or reloading) keeps the live Streak. Entries that fail validation are ignored. The Start Screen's
+split menu reads the same storage for its stats and *Reset practice progress* (`resetPracticeProgress`: drops the
+Practice Set's Levels and live Streak, keeps the best).
+
+A Streak that reaches a multiple of the Practice Set's size completes a **Full Round**; every other multiple of
+10 is a **Milestone** (`streakReward` in `streak/streak.ts`; `PracticeRun.reward` holds the last Answer's). A Full Round
+plays the `full-round` fanfare and pops the Streak pill bigger; a Milestone plays the `milestone` chime and makes it
+glow. `createStreakLabel(streak, setSize)` shows the whole Streak plus a Multiplier badge `×(floor(streak / size) + 1)`
+coloured by `--color-multiplier-x2…x5` (×5 and up stay purple). The bar along the bottom of the Streak pill
+(`--round-progress`) shows `(streak mod size) / size`. (Briefly a Full Round meant every Country found once in the
+Streak; that made ×2 feel unreachably late, so it went back to the Streak's length. Old records may still hold
+`rounds`/`found`; they are ignored.)
+
+`PracticeMode` colours a found Prompt for 1 s and clears a Missed one on Confirm, so the Map shows no results.
+There is no Quiz Session, Leaderboard or Pause Screen; the Navbar title opens the Start Screen, as in Explore Mode.
 
 ## Sound
 
@@ -98,23 +147,39 @@ their value but are ignored, so switching Game Mode back restores them. Effects:
 - Guesses: `quizRules(settings)` → `QuizRules { triesPerPrompt, suddenDeath }`, passed to `QuizRun.start` and
   `QuizRun.restore`. Under Sudden Death a Missed Prompt sets `failed`, which makes the run `finished`; `App` waits
   longer (1.8 s) before the End Screen so the pulsing Prompt can be seen.
-- Hints: `QuizMode.showHint`, and what `QuizStatus`'s `onPromptClick` does: open Country Info
+- Hints: `AnswerFeedback.showHint`, and what `QuizStatus`'s `onPromptClick` does: open Country Info
   (`QuizMode.showCountryInfo` stops the Session Time until the dialog's `close` event), or with No hints show
-  "Hints are disabled" (`QuizStatus.showPromptNotice`). In Capital to Location it is null: the Prompt is plain text.
+  "Hints are disabled" (`QuizStatus.showPromptNotice`). When `promptInfoGivesAnswer(settings)` (Capital to
+  Location, or Flag only) it is null: the Prompt is plain content.
 
 `normalizeQuizSettings` upgrades stored settings (Quiz Settings and Quiz Session): missing Modifiers get their
-default, and the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only.
+default, a missing `usStates` becomes false, and the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only.
 
 ## Quiz Session
 
 `localStorage['snoozieworld.quizSession']`:
 `{ version: 1, settings, run: QuizRunSnapshot, elapsedMs, savedAt }`. `QuizRunSnapshot` holds the Quiz Set ids in
-order, the Prompt Results so far, `index`, `wrongTries` and `confirmNeeded`.
+order, the Prompt Results so far, `index`, `wrongTries`, `confirmNeeded` and `startStreak` (missing = 0).
+
+## Quiz Streak
+
+`QuizRun.streak` is derived, not counted: 0 while the Prompt has a wrong Try, else the trailing Correct records,
+plus `startStreak` while every record so far is Correct. So a restored Quiz Run needs only `startStreak`. After a
+Correct, `QuizRun.reward = streakReward(streak, total)`: a Milestone every 10; a Full Round only when `streak` is a
+multiple of the Quiz Set's size, which (since `startStreak` is one) only happens at the end of a perfect Quiz Run.
+`QuizMode` plays the reward's Sound Effect and `QuizStatus` animates the Streak pill (hidden at ≤ 480px).
+
+Carrying over: `localStorage['snoozieworld.quizStreaks']` = `{ [leaderboardKey]: streak }`. `QuizMode` stores 0 on
+any wrong Try, and on finishing `run.perfect ? run.streak : 0`. `App` starts a Quiz Run with `loadQuizStreak`,
+which only accepts a whole multiple of the new Quiz Set's size (else 0). Abandoning keeps the stored value. The
+Multiplier badge is `floor(streak / total) + 1`, so the Quiz Run after one perfect one starts at ×2. A perfect Quiz
+Run's End Screen says *Perfect!* and shows the Streak it carries over.
 
 ## Leaderboard
 
 `localStorage['snoozieworld.leaderboards']` holds `{ [key]: LeaderboardEntry[] }`. The key is
-`<gameModeId>|<sorted categoryIds>`, e.g. `name-to-location|asia,europe`. Modifiers are not in the key: each entry
+`<gameModeId>|<sorted categoryIds>`, e.g. `name-to-location|asia,europe`, plus `|us-states` when Individual
+States in USA is ticked (`usStates`), e.g. `name-to-location||us-states` for the States alone. Modifiers are not in the key: each entry
 stores `modifiers` (only those its Game Mode uses; missing = all default) and the view shows the icons of the
 non-default ones. Each list is kept sorted (Score desc, then date asc) and cut to 10. Unreadable storage counts as
 empty; failed writes are ignored. On load, `flag-to-location|…` lists are merged into `name-to-location|…` with
@@ -164,8 +229,8 @@ dialog's `close` event, based on `returnValue`. Escape closes with an empty `ret
 
 ## Country dataset
 
-Source: [Natural Earth](https://www.naturalearthdata.com/) 1:10m *Admin 0 – Countries* and *Admin 0 – Map Units*
-(public domain), fetched from the `nvkelso/natural-earth-vector` GitHub repo. Regenerate with:
+Source: [Natural Earth](https://www.naturalearthdata.com/) 1:10m *Admin 0 – Countries*, *Admin 0 – Map Units* and
+*Admin 1 – States, Provinces* (public domain), fetched from the `nvkelso/natural-earth-vector` GitHub repo. Regenerate with:
 
 ```
 npm run build:map-data
@@ -182,7 +247,14 @@ The script:
    `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`), `isoA2`, `labelPoint`,
    `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
    because identical flags differ only in their ids.
-4. Simplifies the shapes to ~30% of their points, but never simplifies tiny Countries. Writes TopoJSON
+4. Adds the 50 US States and the District of Columbia from Admin 1 as Countries of kind `state` (id: ISO 3166-2,
+   e.g. `US-CA`; `stateOf: 'USA'`; no Flag; Georgia is renamed "Georgia (US state)" to differ from the Country).
+   Admin 1 borders match Admin 0's vertex for vertex, so in the shared topology the States share arcs with the USA
+   and its neighbours. The Map draws them above the USA but hides them (CSS on `.map--us-states`,
+   `.map__country--us-state`, `.map__country--has-states`, `.map__capital-dot--us-state`) unless `setStatesShown`.
+   With "Individual states in USA" ticked, `quizCountries` asks them, alone or with the Categories, and never the
+   USA.
+5. Simplifies the shapes to ~30% of their points, but never simplifies tiny Countries. Writes TopoJSON
    (~1.7 MB, ~600 KB gzipped).
 
 Downloads are cached in `scripts/.cache/` (git-ignored).
@@ -190,18 +262,21 @@ Downloads are cached in `scripts/.cache/` (git-ignored).
 Known limits of the source data:
 - Natural Earth's shapes are generalised for 1:10 million scale. Deep zoom shows straight coastline segments, and
   Vatican City is a ~110 m square rather than its real outline.
-- 262 Countries: 198 Sovereign States, 57 Overseas Territories, 7 Other Areas.
+- 313 Countries: 198 Sovereign States, 57 Overseas Territories, 7 Other Areas, 51 US States.
 
 ## Country Info
 
 `src/country/country-info.json`, keyed by Country id: `capital`, optional `capitalNote` (split or disputed
 capitals), `capitalPoint` ([lon, lat], for the Capital Dot), `population`, `area` (km², as commonly cited; the
 dataset's own `Country.area` is computed from the simplified shapes and only used for Tiny Country Markers),
-`funFacts` (`{ text, source }[]`, see below), and for Overseas Territories `partOf` (the Sovereign State's id).
+`funFacts` (`{ text, source }[]`, see below), and for Overseas Territories and US States `partOf` (the id of the
+Country they belong to).
 Imported into the bundle.
 
 Capitals, populations and areas were compiled with AI assistance from general knowledge (request 06), not from
-one authoritative source; populations are recent estimates.
+one authoritative source; populations are recent estimates. US States (request 11): 2020 census populations, total
+areas (incl. water); no Fun Facts yet. The District of Columbia has no capital (it *is* Washington, the US capital;
+"Washington" would clash with Washington State in Capital to Location), so it is never asked there.
 
 **Fun Facts** (feedback after request 08) are sourced: every fact has the URL of a page that states it, shown
 in Country Info behind the external-link button. How they were made:

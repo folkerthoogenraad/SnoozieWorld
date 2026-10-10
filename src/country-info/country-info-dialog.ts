@@ -9,7 +9,7 @@ const EXTERNAL_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" s
 
 /**
  * Country Info: a small modal with facts about one Country: its capital,
- * population, area, the Sovereign State an Overseas Territory belongs to, and
+ * population, area, the Country an Overseas Territory or US State belongs to, and
  * a random Fun Fact. The dice shows another one (when there are more); the
  * source button opens the page that confirms it in a new tab. Opened by clicking the Explored Country in the Navbar, or the
  * Prompt during a Quiz Run with Hints on. Closes
@@ -28,7 +28,7 @@ export class CountryInfoDialog {
     })
   }
 
-  /** Provides the Countries, once loaded, to name the Sovereign State of an Overseas Territory. */
+  /** Provides the Countries, once loaded, to name the Sovereign State of an Overseas Territory or State. */
   setCountries(countries: readonly Country[]): void {
     this.countries = new Map(countries.map((country) => [country.id, country]))
   }
@@ -70,7 +70,9 @@ export class CountryInfoDialog {
         ? `Overseas territory of ${parent?.name ?? 'another country'}`
         : country.kind === 'sovereign'
           ? `Sovereign state in ${country.continent}`
-          : 'Not a country'
+          : country.kind === 'state'
+            ? `${country.id === 'US-DC' ? 'Federal district' : 'State'} of ${parent?.name ?? 'another country'}`
+            : 'Not a country'
 
     const facts = part('facts')
     const addFact = (label: string, value: string, note?: string) => {
