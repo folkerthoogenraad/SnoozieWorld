@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selection mockup A</title>
+    <!--
+      Mockup for plan 13 (docs/plans/13-modifications-to-continents.md): the Start Screen and the new
+      Selection page. Variant A: Continent cards that open to show their Regions and Region Options.
+      Open it in a browser from inside the repository: the flags come from node_modules/flag-icons and
+      src/country/us-state-flags. mockup.css copies the app's styles (marked "New" where it adds to them);
+      data.js is the real Country data with the Regions proposed in the plan.
+    -->
+    <link rel="stylesheet" href="mockup.css" />
+  </head>
+  <body>
+    <div class="mockup-note">
+      Mockup · request 13 ·
+      <a href="start-screen.html" aria-current="page">Variant A: cards</a> ·
+      <a href="start-screen-variant-b.html">Variant B: sections</a> ·
+      Leaderboard key: <code data-key></code>
+    </div>
+
+    <div class="screen screen--fixed-height" role="dialog" aria-label="Start Screen">
+      <!-- Page 1: the Start Screen -->
+      <form class="screen__columns" data-page="start" hidden onsubmit="return false">
+        <div class="screen__panel">
+          <h1 class="screen__title">SnoozieWorld</h1>
+
+          <div class="start-screen__group">
+            <h2 class="start-screen__legend">What do you want to quiz?</h2>
+            <button type="button" class="start-screen__selection" data-goto="selection">
+              <span class="start-screen__selection-icons"></span>
+              <span class="start-screen__selection-text">
+                <span class="start-screen__selection-title"></span>
+                <span class="start-screen__selection-detail"></span>
+              </span>
+              <svg class="start-screen__selection-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+            </button>
+          </div>
+
+          <fieldset class="start-screen__group">
+            <legend class="start-screen__legend">Game mode</legend>
+            <label class="start-screen__option start-screen__option--game-mode">
+              <input type="radio" name="game-mode" value="name-to-location" checked />
+              <span>
+                <span class="start-screen__option-label">Name to Location</span>
+                <span class="start-screen__option-description">You get a country; click it on the map.</span>
+              </span>
+            </label>
+            <label class="start-screen__option start-screen__option--game-mode">
+              <input type="radio" name="game-mode" value="capital-to-location" />
+              <span>
+                <span class="start-screen__option-label">Capital to Location</span>
+                <span class="start-screen__option-description">You get a capital city; click its country on the map.</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="start-screen__group">
+            <h2 class="start-screen__legend">Modifiers</h2>
+            <div class="start-screen__modifiers"></div>
+            <p class="start-screen__modifier-explanation" aria-live="polite">Click a modifier to change it.</p>
+          </div>
+
+          <div class="screen__actions">
+            <div class="start-screen__split">
+              <button type="button" class="screen__button screen__button--secondary start-screen__split-main">Explore</button>
+              <button type="button" class="screen__button screen__button--secondary start-screen__split-toggle" title="More modes" aria-label="More modes">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
+              </button>
+            </div>
+            <button type="button" class="screen__button" data-start>Start quiz</button>
+          </div>
+        </div>
+        <div class="screen__panel screen__panel--side" data-leaderboard></div>
+      </form>
+
+      <!-- Page 2: the Selection page -->
+      <form class="screen__columns" data-page="selection" onsubmit="return false">
+        <div class="screen__panel">
+          <div class="quiz-set__header">
+            <button type="button" class="quiz-set__back" data-goto="start" title="Back" aria-label="Back">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>
+            </button>
+            <h1 class="quiz-set__title">What do you want to quiz?</h1>
+          </div>
+          <div class="quiz-set__continents"></div>
+
+          <div class="screen__actions">
+            <button type="button" class="screen__button screen__button--secondary" data-clear>Clear all</button>
+            <button type="button" class="screen__button" data-goto="start" data-done>Done</button>
+          </div>
+        </div>
+        <div class="screen__panel screen__panel--side" data-list></div>
+      </form>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="mockup.js"></script>
+    <script src="variant-a.js"></script>
+  </body>
+</html>

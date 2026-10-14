@@ -1,0 +1,1011 @@
+:root {
+  --color-ocean: #3b82b8;
+  --color-surface: #ffffff;
+  --color-surface-hover: #eef1f4;
+  --color-surface-active: #dfe4ea;
+  --color-surface-alt: #ffffff;
+  --color-surface-side: #f5f7f9;
+  --color-highlight-bg: #e7f0fb;
+  --color-text-correct: #2e7d32;
+  --color-text-half-correct: #a67c00;
+  --color-text-missed: #c62828;
+  --color-text: #1b2430;
+  --color-text-muted: #5a6675;
+  --color-accent: #2f7dd1;
+  --color-accent-hover: #2468b3;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+/* Stands in for the Map behind the modal, with the dialog's backdrop on top. */
+body {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 16px;
+  background:
+    linear-gradient(rgb(10 20 30 / 0.55), rgb(10 20 30 / 0.55)),
+    radial-gradient(circle at 30% 40%, #5fa84f 0 12%, transparent 12.5%),
+    radial-gradient(circle at 70% 60%, #5fa84f 0 16%, transparent 16.5%),
+    var(--color-ocean);
+}
+
+.mockup-note {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 16px);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mockup-note code {
+  font-size: 0.75rem;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ---- src/screen/screen.css ---- */
+.screen {
+  width: min(940px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.35);
+  overflow: auto;
+}
+
+.screen__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.screen--fixed-height {
+  height: min(calc(100dvh - 32px), max(60vh, 680px));
+}
+
+.screen--fixed-height .screen__columns {
+  height: 100%;
+}
+
+.screen--fixed-height .screen__panel {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.screen__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+}
+
+.screen__panel--side {
+  background: var(--color-surface-side);
+  border-left: 1px solid var(--color-surface-active);
+}
+
+.screen__title {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.screen__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.screen__button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.screen__button:hover {
+  background: var(--color-accent-hover);
+}
+
+.screen__button:disabled {
+  background: var(--color-text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.screen__button--secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.screen__button--secondary:hover {
+  background: var(--color-surface-active);
+}
+
+.screen__button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .screen__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .screen__panel {
+    padding: 20px;
+  }
+
+  .screen__panel--side {
+    border-left: none;
+    border-top: 1px solid var(--color-surface-active);
+  }
+
+  .screen--fixed-height {
+    height: calc(100dvh - 32px);
+  }
+
+  .screen--fixed-height .screen__columns {
+    height: auto;
+  }
+
+  .screen--fixed-height .screen__panel {
+    overflow-y: visible;
+  }
+}
+
+/* ---- src/start-screen/start-screen.css ---- */
+.start-screen__group {
+  min-width: 0; /* New: a fieldset is min-content wide by default, which the one-line contents would stretch. */
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.start-screen__legend {
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.start-screen__categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2px 12px;
+}
+
+.start-screen__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.start-screen__option:hover {
+  background: var(--color-surface-hover);
+}
+
+.start-screen__option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.start-screen__option--game-mode {
+  align-items: flex-start;
+}
+
+.start-screen__option--game-mode input {
+  margin-top: 3px;
+}
+
+.start-screen__option-label {
+  display: block;
+  font-weight: 500;
+}
+
+.start-screen__option-description {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.start-screen__count {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.start-screen__modifiers {
+  display: flex;
+  gap: 8px;
+}
+
+.start-screen__modifier {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 40px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.start-screen__modifier:hover {
+  background: var(--color-surface-hover);
+}
+
+.start-screen__modifier--on,
+.start-screen__modifier--on:hover {
+  border-color: var(--color-accent);
+  background: var(--color-highlight-bg);
+  color: var(--color-accent);
+}
+
+.start-screen__modifier .modifier-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.start-screen__modifier-explanation {
+  min-height: 3em;
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.start-screen__modifier-explanation b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.start-screen__split {
+  position: relative;
+  display: flex;
+  gap: 1px;
+}
+
+.start-screen__split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.start-screen__split-toggle {
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.start-screen__split-toggle svg,
+.start-screen__category-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+}
+
+
+
+.start-screen__group {
+  min-width: 0; /* A fieldset is min-content wide by default, which one-line contents would stretch. */
+}
+
+/* ---- New (Start Screen): the button showing the Selection, which opens the Selection page ---- */
+.start-screen__selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-screen__selection:hover {
+  border-color: var(--color-accent);
+  background: var(--color-highlight-bg);
+}
+
+.start-screen__selection:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.start-screen__selection-icons {
+  display: flex;
+  flex: none;
+}
+
+.start-screen__selection-icons .continent-icon {
+  width: 40px;
+  height: 28px;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.start-screen__selection-icons .continent-icon + .continent-icon {
+  margin-left: -14px;
+}
+
+.start-screen__selection-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.start-screen__selection-title {
+  display: block;
+  font-weight: 600;
+}
+
+.start-screen__selection-detail {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.start-screen__selection-arrow {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- New: a small map of a Continent ---- */
+.continent-icon {
+  flex: none;
+  display: block;
+  width: 64px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e3eef8;
+}
+
+.continent-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.continent-icon__world {
+  fill: #ccd5de;
+}
+
+.continent-icon__land {
+  fill: #93a4b6;
+  transition: fill 0.15s;
+}
+
+.continent-icon--selected .continent-icon__land {
+  fill: var(--color-accent);
+}
+
+/* ---- New: the Selection page ---- */
+.quiz-set__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -8px;
+}
+
+.quiz-set__back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.quiz-set__back:hover {
+  background: var(--color-surface-hover);
+}
+
+.quiz-set__back svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quiz-set__title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.quiz-set__continents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quiz-set__continent {
+  border: 1px solid var(--color-surface-active);
+  border-radius: 12px;
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+}
+
+.quiz-set__continent--selected {
+  border-color: var(--color-accent);
+}
+
+.quiz-set__continent-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.quiz-set__continent-head:hover {
+  background: var(--color-surface-hover);
+}
+
+.quiz-set__continent--open .quiz-set__continent-head {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.quiz-set__continent-check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.quiz-set__continent-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.quiz-set__continent-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* What the Continent contains when it differs from the default. */
+.quiz-set__summary {
+  display: block;
+  overflow: hidden;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.quiz-set__continent-count {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz-set__toggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.quiz-set__toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.quiz-set__toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+}
+
+.quiz-set__continent--open .quiz-set__toggle svg {
+  transform: rotate(180deg);
+}
+
+.quiz-set__regions {
+  padding: 4px 8px 8px;
+  border-top: 1px solid var(--color-surface-active);
+}
+
+.quiz-set__region + .quiz-set__region {
+  margin-top: 2px;
+  padding-top: 2px;
+  border-top: 1px solid var(--color-surface-active);
+}
+
+.quiz-set__regions .start-screen__option {
+  align-items: flex-start;
+}
+
+.quiz-set__regions .start-screen__option input {
+  margin-top: 3px;
+}
+
+.quiz-set__region-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The Countries of a Region or Region Option, in one line. */
+.quiz-set__contents {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.quiz-set__option {
+  margin-left: 26px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.quiz-set__regions .quiz-set__option input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.quiz-set__option .start-screen__option-label {
+  font-size: 0.92rem;
+}
+
+.quiz-set__option--disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.quiz-set__option--disabled:hover {
+  background: none;
+}
+
+.quiz-set__count--extra::before {
+  content: '+';
+}
+
+/* ---- New: the Countries in the Quiz Set, where the Leaderboard usually is ---- */
+.quiz-list__group {
+  margin-top: 12px;
+}
+
+.quiz-list__continent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.quiz-list__continent span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.quiz-list__region {
+  margin: 8px 0 2px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quiz-list__countries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz-list__country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 0.9rem;
+}
+
+.quiz-list__country span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.quiz-list__flag {
+  flex: none;
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--color-surface-active);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
+  object-fit: cover;
+}
+
+.quiz-list__left-out {
+  margin: 12px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+/* ---- src/leaderboard/leaderboard.css ---- */
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaderboard__title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.leaderboard__subtitle {
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.leaderboard__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard__row {
+  display: grid;
+  grid-template-columns: 2ch 4.5ch 50px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard__row:nth-child(odd) {
+  background: var(--color-surface-alt);
+}
+
+.leaderboard__row--empty {
+  color: var(--color-text-muted);
+}
+
+.leaderboard__rank {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.leaderboard__score {
+  font-weight: 700;
+}
+
+.leaderboard__modifiers {
+  display: flex;
+  gap: 1px;
+  color: var(--color-accent);
+}
+
+.leaderboard__modifier {
+  display: flex;
+}
+
+.leaderboard__modifier .modifier-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.leaderboard__counts {
+  display: flex;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.leaderboard__correct {
+  color: var(--color-text-correct);
+}
+
+.leaderboard__half-correct {
+  color: var(--color-text-half-correct);
+}
+
+.leaderboard__missed {
+  color: var(--color-text-missed);
+}
+
+.leaderboard__time {
+  font-size: 0.85rem;
+}
+
+.leaderboard__date {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.leaderboard__note {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .leaderboard__row {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .leaderboard__counts {
+    gap: 6px;
+  }
+}
+
+/* ---- New: the links between the mockup's variants ---- */
+.mockup-note a {
+  color: #fff;
+}
+
+.mockup-note a[aria-current] {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ---- New: Continent cards, both variants ---- */
+.quiz-set__summary--empty {
+  color: var(--color-text-muted);
+}
+
+.quiz-set__continent-count {
+  min-width: 2ch;
+  text-align: right;
+}
+
+.quiz-set__continent--disabled {
+  opacity: 0.5;
+}
+
+.quiz-set__continent--disabled .quiz-set__continent-head,
+.quiz-set__continent--disabled.quiz-set__continent-head {
+  cursor: not-allowed;
+}
+
+.quiz-set__continent--disabled .quiz-set__continent-head:hover,
+.quiz-set__continent--disabled.quiz-set__continent-head:hover {
+  background: none;
+}
+
+/* ---- New: variant B ---- */
+.pick__continent {
+  padding-right: 16px;
+}
+
+.pick__total {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The heading of a Section: a checkbox with its name and count, and an arrow that opens or closes it. */
+.pick__heading {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 8px -6px 2px;
+}
+
+.pick__section {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick__section:hover,
+.pick__collapse:hover {
+  background: var(--color-surface-active);
+}
+
+.pick__collapse:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.pick__collapse {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.pick__collapse svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(180deg);
+  transition: transform 0.25s;
+}
+
+.pick__block--collapsed .pick__collapse svg {
+  transform: none;
+}
+
+/* Opens and closes by animating the row height from its content's height to 0. */
+.pick__body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.pick__block--collapsed .pick__body {
+  grid-template-rows: 0fr;
+}
+
+.pick__body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pick__block .quiz-list__countries {
+  transition: opacity 0.25s;
+}
+
+.pick__block--off .quiz-list__countries {
+  opacity: 0.35;
+}
+
+.pick__section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pick__section input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.pick__block--off .pick__section-label {
+  color: var(--color-text-muted);
+}
+
+.pick__section-count {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Country the Game Mode can't ask (the tooltip says why): greyed out. */
+.quiz-list__country--unaskable {
+  opacity: 0.4;
+}
+
+/* The USA while its States are asked instead: crossed out. */
+.quiz-list__country--replaced span {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.quiz-list__country--replaced .quiz-list__flag {
+  opacity: 0.5;
+}
+
+/* A line between the Continents. */
+.pick__groups .quiz-list__group + .quiz-list__group {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-surface-active);
+}
+
+/* The Countries of a Section, indented to line up with its name, so the headings stand out. */
+.pick__block .quiz-list__countries {
+  padding-left: 24px;
+}
