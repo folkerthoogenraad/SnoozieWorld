@@ -10,7 +10,8 @@ src/
   mode.ts                   Mode interface (start/stop)
   style.css                 global reset and colour variables (--color-land, --color-correct, …)
   country/country.ts        Country model and loading of Country Shapes
-  country/flag.ts           Flag lookup (flag-icons)
+  country/flag.ts           Flag lookup (flag-icons; US State Flags by id)
+  country/us-state-flags/   US State Flags (SVG, Wikimedia Commons) and their SOURCES.md
   country/country-label.ts  Flag and Country Label elements
   country/country-info.ts   Country Info lookup (capital, population, area, fun fact) and formatting
   country/country-info.json Country Info data, hand-maintained (see below)
@@ -246,9 +247,10 @@ The script:
 3. Sets the properties the app uses: `name` (with `NAME_OVERRIDES`), `kind` (sovereign/territory/other, see
    `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`), `isoA2`, `labelPoint`,
    `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
-   because identical flags differ only in their ids.
+   because identical flags differ only in their ids. US States are checked against their own Flags (all distinct),
+   so run `npm run fetch:us-state-flags` first when those are missing.
 4. Adds the 50 US States and the District of Columbia from Admin 1 as Countries of kind `state` (id: ISO 3166-2,
-   e.g. `US-CA`; `stateOf: 'USA'`; no Flag; Georgia is renamed "Georgia (US state)" to differ from the Country).
+   e.g. `US-CA`; `stateOf: 'USA'`; their Flag is looked up by id, see Flags; Georgia is renamed "Georgia (US state)" to differ from the Country).
    Admin 1 borders match Admin 0's vertex for vertex, so in the shared topology the States share arcs with the USA
    and its neighbours. The Map draws them above the USA but hides them (CSS on `.map--us-states`,
    `.map__country--us-state`, `.map__country--has-states`, `.map__capital-dot--us-state`) unless `setStatesShown`.
@@ -301,6 +303,21 @@ SVGs from [flag-icons](https://github.com/lipis/flag-icons) (MIT), 4:3 versions.
 `import.meta.glob` with `?no-inline`. That way the bundle only holds a code → URL table, and each flag file is
 downloaded the first time it is shown.
 
+**US State Flags** (request 12) are not in flag-icons. They come from Wikimedia Commons, where all 51 are public
+domain (Mississippi's is "Copyrighted free use": free for any use). They are committed in
+`src/country/us-state-flags/`, named by Country id (`US-CA.svg`); `SOURCES.md` there lists each file's Commons page
+and licence. Refresh them (e.g. when a State adopts a new flag, as Minnesota and Utah did in 2024) with:
+
+```
+npm run fetch:us-state-flags
+```
+
+The script stops on any file whose licence is not public domain or Copyrighted free use, and adds a `viewBox`
+where a file has only a width and height (otherwise it would not scale in an `<img>`). The files are the Commons
+originals, not trimmed: the seal flags are large (up to ~650 KB, ~280 KB gzipped), but each is only
+downloaded when shown; svgo saved under 10%. Most State flags are not 4:3 (3:2, 5:3, 2:1; Ohio's is a pennant), so
+`.flag--state` keeps the Flag's width but takes the flag's own height, uncropped.
+
 ## Deployment
 
 `.github/workflows/deploy.yml` builds every push to `main` and every pull request (`npm ci`, then `npm run build`,
@@ -322,5 +339,6 @@ The app has no URL routing, so no 404 fallback page is needed.
 | d3-geo, d3-zoom, d3-selection, d3-transition | projection, zoom/pan, DOM, animated pan | ISC |
 | topojson-client | decoding the dataset | ISC |
 | flag-icons | Flags | MIT |
+| Wikimedia Commons | US State Flags | Public domain |
 | topojson-server, topojson-simplify | building the dataset (dev only) | ISC |
 | Natural Earth data | Country Shapes | Public domain |

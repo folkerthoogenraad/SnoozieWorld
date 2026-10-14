@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "build:map-data": "node scripts/build-map-data.mjs"
+    "build:map-data": "node scripts/build-map-data.mjs",
+    "fetch:us-state-flags": "node scripts/fetch-us-state-flags.mjs"
   },
   "devDependencies": {
     "@types/d3-geo": "^3.1.1",

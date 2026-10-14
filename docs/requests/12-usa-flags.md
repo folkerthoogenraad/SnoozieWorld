@@ -1,0 +1,1 @@
+Please add the USA flags as well, so we can practise that and use that too. No need for the fun facts though. Find a source that offers these with a public license. IF you can't find one, let me know.

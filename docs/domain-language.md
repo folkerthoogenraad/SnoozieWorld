@@ -101,9 +101,9 @@ A wrong Try also briefly flashes the clicked Country dark red.
 | **Ocean** | All water on the Map: the area behind the Countries. | `.map__ocean` |
 | **Continent** | The continent of a Country (Africa, Asia, Europe, North America, South America, Oceania, Antarctica). Mostly Natural Earth's; see the build script for the overrides. | `Country.continent` |
 | **Capital** | The capital of a Country, from Country Info. Some have none (uninhabited islands, Other Areas, Tokelau, Dhekelia, Western Sahara). A capital name used twice (Kingston: Jamaica and Norfolk Island) is asked with its Continent: "Kingston (Oceania)". | `CountryInfo.capital`, `capitalPrompt` |
-| **Flag** | The flag of a Country, looked up by `Country.isoA2`. Some Other Areas have none. | `flagUrl` — `src/country/flag.ts` |
+| **Flag** | The flag of a Country, looked up by `Country.isoA2` (a US State's by its id). Some Other Areas have none. | `flagUrl` — `src/country/flag.ts` |
 | **Distinct Flag** | A Flag no other Country uses. Sovereign States always count as having one. A territory loses it when it shares a flag (e.g. Réunion uses the French flag). | `Country.distinctFlag` |
-| **US State** | One of the 50 states of the United States, or the District of Columbia (Natural Earth "Admin 1"). A Country of its own that lies on top of the USA; the Map shows the States instead of the USA only during a Quiz or Practice with Individual States in USA. No Flag (striped placeholder), so never asked with Flag only. Not to be confused with the *Country States* on the Map. | `kind: 'state'`, `Country.stateOf` |
+| **US State** | One of the 50 states of the United States, or the District of Columbia (Natural Earth "Admin 1"). A Country of its own that lies on top of the USA; the Map shows the States instead of the USA only during a Quiz or Practice with Individual States in USA. Has a Flag (request 12), so it is asked with Flag only too. Not to be confused with the *Country States* on the Map. | `kind: 'state'`, `Country.stateOf` |
 
 ## Future Game Modes
 
@@ -144,5 +144,5 @@ A wrong Try also briefly flashes the clicked Country dark red.
   (51 US States) brought them back too rarely. A Leitner system spaced in Prompts, with a small Working Set.
   Levels are kept per Skill, Streaks per Practice Set (feedback 11).
 - **US States can be quizzed on their own, and replace the USA** (request 11 and its follow-up): with North
-  America ticked, the USA is left out. The District of Columbia counts as one of them. They have no Flags yet, so Flag only skips them.
+  America ticked, the USA is left out. The District of Columbia counts as one of them. Flag only skipped them until they got Flags (request 12).
 - **France's Country Info figures are for metropolitan France**, because its overseas regions are separate Countries.

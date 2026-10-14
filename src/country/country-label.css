@@ -16,6 +16,22 @@
   height: 42px;
 }
 
+/* US State Flags are not 4:3 like the others (most are 3:2, Ohio's is a pennant), so they keep the width but
+   take their own height, without cropping. */
+.flag--state {
+  height: auto;
+  aspect-ratio: auto 3 / 2;
+  object-fit: contain;
+}
+
+.flag--small.flag--state {
+  max-height: 24px;
+}
+
+.flag--large.flag--state {
+  max-height: 42px;
+}
+
 .flag--missing {
   background: repeating-linear-gradient(45deg, #3a4654 0 4px, #2c3640 4px 8px);
 }

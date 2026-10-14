@@ -7,6 +7,7 @@ export function createFlag(country: Country, size: 'small' | 'large' = 'small'):
   const url = flagUrl(country)
   const flag = document.createElement(url ? 'img' : 'span')
   flag.className = `flag flag--${size}`
+  if (country.kind === 'state') flag.classList.add('flag--state')
   if (url) {
     Object.assign(flag, { src: url, alt: '' })
   } else {

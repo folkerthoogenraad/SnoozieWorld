@@ -34,6 +34,7 @@ const SOURCE_BASE_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const cacheDir = join(root, 'scripts', '.cache')
 const flagDir = join(root, 'node_modules', 'flag-icons', 'flags', '4x3')
+const stateFlagDir = join(root, 'src', 'country', 'us-state-flags')
 const outputPath = join(root, 'public', 'data', 'countries.topo.json')
 
 // Fraction of points (ranked by Visvalingam weight) kept after simplification.
@@ -145,7 +146,8 @@ function countryProperties(id, p, kind = kindOf(id, p)) {
   }
 }
 
-// A US State, keyed by its ISO 3166-2 code (e.g. "US-CA"). States have no Flag.
+// A US State, keyed by its ISO 3166-2 code (e.g. "US-CA"). Its Flag is looked
+// up by that id (see scripts/fetch-us-state-flags.mjs), not by isoA2.
 function stateProperties(id, p) {
   const country = admin0Properties.get(STATES_OF)
   return {
@@ -163,9 +165,9 @@ function stateProperties(id, p) {
 
 // flag-icons' SVGs differ only in their ids when two flags look the same
 // (e.g. Réunion uses the French flag), so compare them with the ids removed.
-async function flagFingerprint(isoA2) {
-  const code = isoA2?.toLowerCase()
-  const path = join(flagDir, `${code}.svg`)
+async function flagFingerprint(f) {
+  const code = f.properties.kind === 'state' ? f.id : f.properties.isoA2?.toLowerCase()
+  const path = join(f.properties.kind === 'state' ? stateFlagDir : flagDir, `${code}.svg`)
   if (!code || !existsSync(path)) return null
   const svg = (await readFile(path, 'utf8')).replace(/<svg[^>]*>/, '').replaceAll(`${code}-`, '')
   return createHash('sha1').update(svg).digest('hex')
@@ -174,7 +176,7 @@ async function flagFingerprint(isoA2) {
 // A Flag is distinct when no other Country has the same one. Sovereign states
 // always count as distinct: a territory sharing their flag loses out instead.
 async function markDistinctFlags(features) {
-  const fingerprints = await Promise.all(features.map((f) => flagFingerprint(f.properties.isoA2)))
+  const fingerprints = await Promise.all(features.map(flagFingerprint))
   const sovereignFlags = new Set(fingerprints.filter((fp, i) => fp && features[i].properties.kind === 'sovereign'))
   const counts = new Map()
   for (const fp of fingerprints) if (fp) counts.set(fp, (counts.get(fp) ?? 0) + 1)
