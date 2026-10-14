@@ -4,6 +4,7 @@ import { createLeaderboardView, describeQuizSettings } from '../leaderboard/lead
 import type { LeaderboardEntry } from '../leaderboard/leaderboard.ts'
 import { createStreakLabel } from '../streak/streak.ts'
 import '../screen/screen.css'
+import { onScreenButton } from '../screen/screen.ts'
 import './end-screen.css'
 import { formatScore, type PromptResult, type QuizRun } from './quiz-run.ts'
 import { formatDuration } from './stopwatch.ts'
@@ -42,9 +43,7 @@ export class EndScreen {
     `
     this.summaryPanel = this.element.querySelector('.end-screen__summary')!
     this.leaderboardPanel = this.element.querySelector('.screen__panel--side')!
-    this.element.addEventListener('close', () => {
-      if (this.element.returnValue === 'back-to-start') options.onBackToStart()
-    })
+    onScreenButton(this.element, 'back-to-start', options.onBackToStart)
   }
 
   open(result: {

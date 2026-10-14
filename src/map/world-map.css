@@ -71,6 +71,14 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* Countries fading back to land (WorldMap.fadeOutCountryStates); as long as FADE_DURATION. */
+.map--fading .map__country,
+.map--fading .map__marker-dot {
+  transition:
+    fill 0.6s ease,
+    stroke 0.6s ease;
+}
+
 .map__country--excluded {
   --country-fill: var(--color-excluded);
   --country-stroke: var(--color-excluded-border);

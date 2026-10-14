@@ -4,6 +4,7 @@ import { formatScore, type QuizRun } from '../quiz/quiz-run.ts'
 import type { QuizSettings } from '../quiz/quiz-settings.ts'
 import { formatDuration } from '../quiz/stopwatch.ts'
 import '../screen/screen.css'
+import { onScreenButton } from '../screen/screen.ts'
 import './pause-screen.css'
 
 /**
@@ -35,9 +36,10 @@ export class PauseScreen {
     `
     this.details = this.element.querySelector('.pause-screen__details')!
     this.leaderboardPanel = this.element.querySelector('.screen__panel--side')!
+    onScreenButton(this.element, 'abandon', options.onAbandon)
+    // Continue, or Escape.
     this.element.addEventListener('close', () => {
-      if (this.element.returnValue === 'abandon') options.onAbandon()
-      else options.onContinue()
+      if (this.element.returnValue !== 'abandon') options.onContinue()
     })
   }
 

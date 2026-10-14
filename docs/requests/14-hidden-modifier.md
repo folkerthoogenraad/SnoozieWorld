@@ -1,0 +1,1 @@
+A new modifier called "hidden" should be added, that prevents highlighting correct countries during a quiz. So after youve guessed correctly, the highlight disappears again off the map. This makes the quiz slightly harder.

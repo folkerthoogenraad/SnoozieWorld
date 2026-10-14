@@ -43,6 +43,8 @@ const WORLD_COPIES = [-1, 0, 1]
 
 // How long a Hint stays on the Map (ms).
 const HINT_DURATION = 2500
+// How long Countries take to fade back to land in fadeOutCountryStates (ms); see .map--fading.
+const FADE_DURATION = 600
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -107,6 +109,9 @@ export class WorldMap {
   private readonly hoverListeners = new Set<CountryListener>()
   private readonly clickListeners = new Set<CountryClickListener>()
   private hint: { element: HTMLElement; worldPoint: [number, number]; timeout: number } | null = null
+  /** Set while Countries fade back to land (fadeOutCountryStates). */
+  private fadeTimeout: number | null = null
+  private hideStatesTimeout: number | null = null
 
   constructor() {
     this.element = document.createElement('main')
@@ -280,7 +285,14 @@ export class WorldMap {
    * states in USA"), or the USA as one Country again.
    */
   setStatesShown(shown: boolean): void {
-    this.element.classList.toggle('map--us-states', shown)
+    if (this.hideStatesTimeout !== null) window.clearTimeout(this.hideStatesTimeout)
+    this.hideStatesTimeout = null
+    if (!shown && this.fadeTimeout !== null) {
+      // The States stay until they have faded to land, like the USA under them, so the swap doesn't show.
+      this.hideStatesTimeout = window.setTimeout(() => this.setStatesShown(false), FADE_DURATION)
+    } else {
+      this.element.classList.toggle('map--us-states', shown)
+    }
   }
 
   setCountryState(countryId: string, state: CountryState | null): void {
@@ -294,6 +306,21 @@ export class WorldMap {
       this.toggleClass(id, 'map__country--flash-wrong', false)
     }
     this.setPulsingCountry(null)
+  }
+
+  /**
+   * Like clearCountryStates, but the Countries fade back to land instead of
+   * switching at once (feedback 12), e.g. when a Quiz Run ends. Country States
+   * set during the fade (by the next Mode) fade in too.
+   */
+  fadeOutCountryStates(): void {
+    if (this.fadeTimeout !== null) window.clearTimeout(this.fadeTimeout)
+    this.element.classList.add('map--fading')
+    this.clearCountryStates()
+    this.fadeTimeout = window.setTimeout(() => {
+      this.element.classList.remove('map--fading')
+      this.fadeTimeout = null
+    }, FADE_DURATION)
   }
 
   /** Briefly flashes a Country to show it was a wrong Answer. */

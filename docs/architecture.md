@@ -35,6 +35,7 @@ src/
   quiz/quiz-streak.ts       Quiz Streak carried over between perfect Quiz Runs (localStorage)
   streak/streak.ts          Streak rewards (Milestone, Full Round), Multiplier badge, flame icon; Quiz and Practice
   quiz/answer-feedback.ts   Hints, Map Notice and Sound Effects for an Answer, shared by Quiz and Practice Mode
+  quiz/fading-result.ts     Colours a found Prompt for a moment (Practice Mode, and the Results Modifier on Hidden)
   quiz/end-screen.ts        End Screen modal
   pause-screen/             Pause Screen modal
   leaderboard/leaderboard.ts       Leaderboard storage (localStorage)
@@ -152,6 +153,9 @@ their value but are ignored, so switching Game Mode back restores them. Effects:
   (`QuizMode.showCountryInfo` stops the Session Time until the dialog's `close` event), or with No hints show
   "Hints are disabled" (`QuizStatus.showPromptNotice`). When `promptInfoGivesAnswer(settings)` (Capital to
   Location, or Flag only) it is null: the Prompt is plain content.
+- Results: `QuizMode`. With Hidden, a found Prompt goes through `FadingResult` (as in Practice Mode), a Confirmed
+  one is set back to land, and a restored Quiz Run only re-applies the Missed Prompt awaiting Confirm. Nothing is
+  coloured when the Quiz Run is finished (feedback 12).
 
 `normalizeQuizSettings` upgrades stored settings (Quiz Settings and Quiz Session): missing Modifiers get their
 default, a missing `usStates` becomes false, and the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only.
@@ -194,6 +198,10 @@ scroll. When stacked, the whole dialog scrolls.
 
 The Start Screen and End Screen are `<dialog>`s whose buttons submit with a `value`. The action runs in the
 dialog's `close` event, based on `returnValue`. Escape closes with an empty `returnValue`, so nothing happens.
+Exception: a button that opens another screen (End Screen *Back to start*, Pause Screen *Abandon*) uses
+`onScreenButton` (`src/screen/screen.ts`), which closes the dialog and runs the action in the `submit` event. The
+`close` event comes a task later, so the browser could paint a frame without any modal in between, and the
+backdrop flashed off and on (feedback 12).
 
 ## The Map
 
@@ -227,6 +235,10 @@ dialog's `close` event, based on `returnValue`. Escape closes with an empty `ret
 - **Country States** are CSS classes (`map__country--excluded`, `--correct`, `--missed`, `--highlighted`) on both
   the path and the marker. They only set the `--country-fill` custom property, which the path and the marker's dot
   both use.
+  They switch at once, except after `fadeOutCountryStates` (Quiz and Practice Mode `stop()`): `.map--fading` gives
+  `fill` and `stroke` a 0.6 s transition (`FADE_DURATION`), so the Map fades back to land instead of flashing
+  (feedback 12). Changes by the next Mode during that time fade too, and `setStatesShown(false)` waits until the
+  US States have faded, so their swap for the USA doesn't show.
 
 ## Country dataset
 

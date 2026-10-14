@@ -5,9 +5,10 @@ import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
 import type { SoundPlayer } from '../sound/sound-player.ts'
 import { AnswerFeedback } from './answer-feedback.ts'
+import { FadingResult } from './fading-result.ts'
 import type { QuizRun } from './quiz-run.ts'
 import { saveQuizSession } from './quiz-session.ts'
-import { promptInfoGivesAnswer, type QuizSettings } from './quiz-settings.ts'
+import { activeModifiers, promptInfoGivesAnswer, type QuizSettings } from './quiz-settings.ts'
 import { QuizStatus } from './quiz-status.ts'
 import { saveQuizStreak } from './quiz-streak.ts'
 import { Stopwatch } from './stopwatch.ts'
@@ -21,6 +22,9 @@ import { Stopwatch } from './stopwatch.ts'
  *   turns Missed (red) and pulses, and the player must click it (Confirm)
  *   before the next Prompt. Under Sudden Death a Missed Prompt ends the Quiz
  *   Run instead.
+ * With the Results Modifier on Hidden, a found Prompt only shows its colour
+ * for a moment, and a Missed one until it is Confirmed; then it is land again,
+ * also when the Quiz Run is finished (feedback 12).
  * Hints, the Map Notice and Sound Effects come from AnswerFeedback.
  * With Hints on, the player can also click the Prompt in the Navbar for its
  * Country Info; the Session Time stops while that is open. With Hints off,
@@ -44,6 +48,8 @@ export class QuizMode implements Mode {
   private readonly countryInfo: CountryInfoDialog
   private readonly sounds: SoundPlayer
   private readonly feedback: AnswerFeedback
+  private readonly fadingResult: FadingResult
+  private readonly resultsHidden: boolean
   private readonly status: QuizStatus
   private readonly stopwatch: Stopwatch
   private stopListening: (() => void)[] = []
@@ -70,6 +76,8 @@ export class QuizMode implements Mode {
     this.countryInfo = options.countryInfo
     this.sounds = options.sounds
     this.feedback = new AnswerFeedback(options.map, options.sounds, options.settings)
+    this.fadingResult = new FadingResult(options.map)
+    this.resultsHidden = activeModifiers(options.settings).results === 'hidden'
     this.status = new QuizStatus(
       options.settings,
       promptInfoGivesAnswer(options.settings)
@@ -113,8 +121,13 @@ export class QuizMode implements Mode {
       // Also fires on reload, e.g. when Vite reloads the page after a code change.
       listen(window, 'pagehide', () => this.save()),
     ]
-    // Show the results of a restored Quiz Run.
-    for (const record of this.run.results) this.map.setCountryState(record.country.id, record.result)
+    // Show the results of a restored Quiz Run. With Hidden only a Missed Prompt still to be Confirmed,
+    // which is the only record of the current Prompt.
+    for (const record of this.run.results) {
+      if (!this.resultsHidden || record.country.id === this.run.prompt?.id) {
+        this.map.setCountryState(record.country.id, record.result)
+      }
+    }
     if (this.run.awaitingConfirm && this.run.prompt) this.map.setPulsingCountry(this.run.prompt.id)
 
     this.navbar.setStatus(this.status.element)
@@ -127,7 +140,8 @@ export class QuizMode implements Mode {
     this.stopwatch.pause()
     this.stopListening.forEach((stop) => stop())
     this.stopListening = []
-    this.map.clearCountryStates()
+    this.fadingResult.clear()
+    this.map.fadeOutCountryStates()
     this.map.setHighlightedCountry(null)
     this.map.setStatesShown(false)
     this.feedback.clear()
@@ -138,10 +152,15 @@ export class QuizMode implements Mode {
     // Clicks on the Ocean or on Excluded Countries are not Answers.
     if (!country || !this.run.includes(country) || this.run.finished) return
 
+    // The previous result colour goes first, so its timeout can't clear a newer state.
+    this.fadingResult.clear()
     const outcome = this.run.answer(country)
     this.feedback.show(outcome, country, point)
     if (outcome.kind === 'correct' || outcome.kind === 'half-correct') {
-      this.map.setCountryState(outcome.prompt.id, outcome.kind)
+      if (this.resultsHidden) this.fadingResult.show(outcome.prompt.id, outcome.kind)
+      else this.map.setCountryState(outcome.prompt.id, outcome.kind)
+    } else if (outcome.kind === 'confirmed' && this.resultsHidden) {
+      this.map.setCountryState(outcome.prompt.id, null)
     }
     if (this.run.reward) this.sounds.play(this.run.reward)
     this.status.update(this.run)

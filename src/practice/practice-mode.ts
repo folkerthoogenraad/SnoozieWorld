@@ -1,17 +1,15 @@
 import type { CountryInfoDialog } from '../country-info/country-info-dialog.ts'
 import type { Country } from '../country/country.ts'
-import type { CountryState, MapPoint, WorldMap } from '../map/world-map.ts'
+import type { MapPoint, WorldMap } from '../map/world-map.ts'
 import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
 import { AnswerFeedback } from '../quiz/answer-feedback.ts'
+import { FadingResult } from '../quiz/fading-result.ts'
 import { promptInfoGivesAnswer, type QuizSettings } from '../quiz/quiz-settings.ts'
 import type { SoundPlayer } from '../sound/sound-player.ts'
 import { savePracticeProgress } from './practice-progress.ts'
 import type { PracticeRun } from './practice-run.ts'
 import { PracticeStatus } from './practice-status.ts'
-
-// How long a found Prompt keeps its result colour before it turns back to land (ms).
-const RESULT_DURATION = 1000
 
 /**
  * Practice Mode: plays a Practice Run on the Map, to learn rather than to
@@ -35,9 +33,8 @@ export class PracticeMode implements Mode {
   private readonly sounds: SoundPlayer
   private readonly feedback: AnswerFeedback
   private readonly status: PracticeStatus
+  private readonly fadingResult: FadingResult
   private stopListening: (() => void)[] = []
-  /** The found Prompt still showing its result colour. */
-  private shownResult: { countryId: string; timeout: number } | null = null
 
   constructor(options: {
     map: WorldMap
@@ -56,6 +53,7 @@ export class PracticeMode implements Mode {
     this.allCountries = options.allCountries
     this.sounds = options.sounds
     this.feedback = new AnswerFeedback(options.map, options.sounds, options.settings)
+    this.fadingResult = new FadingResult(options.map)
     this.status = new PracticeStatus(
       options.settings,
       promptInfoGivesAnswer(options.settings) ? null : (country) => options.countryInfo.open(country),
@@ -81,8 +79,8 @@ export class PracticeMode implements Mode {
   stop(): void {
     this.stopListening.forEach((stop) => stop())
     this.stopListening = []
-    this.clearResult()
-    this.map.clearCountryStates()
+    this.fadingResult.clear()
+    this.map.fadeOutCountryStates()
     this.map.setHighlightedCountry(null)
     this.map.setStatesShown(false)
     this.feedback.clear()
@@ -94,11 +92,11 @@ export class PracticeMode implements Mode {
     if (!country || !this.run.includes(country)) return
 
     // The previous result colour goes first, so its timeout can't clear a newer state.
-    this.clearResult()
+    this.fadingResult.clear()
     const outcome = this.run.answer(country)
     this.feedback.show(outcome, country, point)
     if (outcome.kind === 'correct' || outcome.kind === 'half-correct') {
-      this.showResult(outcome.prompt.id, outcome.kind)
+      this.fadingResult.show(outcome.prompt.id, outcome.kind)
     } else if (outcome.kind === 'confirmed') {
       this.map.setCountryState(outcome.prompt.id, null)
     }
@@ -106,18 +104,5 @@ export class PracticeMode implements Mode {
     this.status.update(this.run)
     this.status.animate(outcome, this.run)
     savePracticeProgress(this.settings, this.run.skill, this.run.streakRecord)
-  }
-
-  /** Colours a found Prompt for a moment. */
-  private showResult(countryId: string, state: CountryState): void {
-    this.map.setCountryState(countryId, state)
-    this.shownResult = { countryId, timeout: window.setTimeout(() => this.clearResult(), RESULT_DURATION) }
-  }
-
-  private clearResult(): void {
-    if (!this.shownResult) return
-    window.clearTimeout(this.shownResult.timeout)
-    this.map.setCountryState(this.shownResult.countryId, null)
-    this.shownResult = null
   }
 }

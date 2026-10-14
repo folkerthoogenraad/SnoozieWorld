@@ -3,17 +3,19 @@
  * a few States; the first one is the default (the Modifier is "off"). The
  * player clicks a Modifier on the Start Screen to go to its next State.
  */
-export type ModifierId = 'flag' | 'guesses' | 'hints'
+export type ModifierId = 'flag' | 'guesses' | 'hints' | 'results'
 
 export type FlagState = 'name-and-flag' | 'name-only' | 'flag-only'
 export type GuessesState = 'two-guesses' | 'single-guess' | 'sudden-death'
 export type HintsState = 'hints' | 'no-hints'
+export type ResultsState = 'shown' | 'hidden'
 
 /** The State of every Modifier. Modifiers a Game Mode doesn't use stay at their default. */
 export interface ModifierSettings {
   flag: FlagState
   guesses: GuessesState
   hints: HintsState
+  results: ResultsState
 }
 
 export interface ModifierState {
@@ -41,6 +43,7 @@ const SKULL =
   '<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M8 1.5c-3.3 0-5.6 2.3-5.6 5.3 0 1.7.8 3.1 2 3.9v2.3c0 .4.3.7.7.7h1.4v-1.5h1v1.5h1v-1.5h1v1.5h1.4c.4 0 .7-.3.7-.7v-2.3c1.2-.8 2-2.2 2-3.9 0-3-2.3-5.3-5.6-5.3zM4.6 7.4a1.5 1.5 0 1 0 3 0 1.5 1.5 0 1 0-3 0zm3.8 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 1 0-3 0z" />'
 const BULB = '<path d="M8 1.5a4.3 4.3 0 0 0-2.5 7.8c.4.3.6.8.6 1.3v.6h3.8v-.6c0-.5.2-1 .6-1.3A4.3 4.3 0 0 0 8 1.5zM6.2 13.5h3.6M7 15h2" />'
 const SLASH = '<path d="M2 2l12 12" />'
+const EYE = '<path d="M1.5 8S3.9 3.5 8 3.5 14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" /><circle cx="8" cy="8" r="2" />'
 
 export const MODIFIERS: Record<ModifierId, Modifier> = {
   flag: {
@@ -109,9 +112,32 @@ export const MODIFIERS: Record<ModifierId, Modifier> = {
       },
     ],
   },
+  results: {
+    id: 'results',
+    label: 'Results',
+    states: [
+      {
+        id: 'shown',
+        label: 'Shown',
+        description: 'Countries you found stay coloured on the map.',
+        icon: svg(EYE),
+      },
+      {
+        id: 'hidden',
+        label: 'Hidden',
+        description: "Countries you found turn back to land after a moment, so the map doesn't show which are left.",
+        icon: svg(EYE + SLASH),
+      },
+    ],
+  },
 }
 
-export const DEFAULT_MODIFIERS: ModifierSettings = { flag: 'name-and-flag', guesses: 'two-guesses', hints: 'hints' }
+export const DEFAULT_MODIFIERS: ModifierSettings = {
+  flag: 'name-and-flag',
+  guesses: 'two-guesses',
+  hints: 'hints',
+  results: 'shown',
+}
 
 export function modifierState(id: ModifierId, settings: ModifierSettings): ModifierState {
   const modifier = MODIFIERS[id]

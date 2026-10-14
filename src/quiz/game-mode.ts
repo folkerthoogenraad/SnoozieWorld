@@ -20,7 +20,7 @@ export const GAME_MODES: readonly GameMode[] = [
     id: 'name-to-location',
     label: 'Name to Location',
     description: 'You get a country; click it on the map.',
-    modifierIds: ['flag', 'guesses', 'hints'],
+    modifierIds: ['flag', 'guesses', 'hints', 'results'],
     // A shared Flag (e.g. Réunion uses the French one) would have two right answers.
     canAsk: (country, modifiers) => modifiers.flag !== 'flag-only' || country.distinctFlag,
   },
@@ -28,7 +28,7 @@ export const GAME_MODES: readonly GameMode[] = [
     id: 'capital-to-location',
     label: 'Capital to Location',
     description: 'You get a capital city; click its country on the map.',
-    modifierIds: ['guesses', 'hints'],
+    modifierIds: ['guesses', 'hints', 'results'],
     canAsk: (country) => !!countryInfo(country)?.capital,
   },
 ]

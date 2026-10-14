@@ -58,6 +58,7 @@ Exactly one Mode is active at a time (`Mode` in `src/mode.ts`).
 | **Flag Modifier** | Name to Location only. **Name and flag** (default), **Name only**, **Flag only** (skips Countries without a Distinct Flag; this used to be the Flag to Location Game Mode). Icons: T + flag, T, flag. | `ModifierSettings.flag` |
 | **Guesses Modifier** | **Two guesses** (default), **Single Guess** (one Try per Prompt), **Sudden Death** (one Try, and a Missed Prompt fails the Quiz Run). Icons: 2, 1, skull. A *guess* is a Try. | `ModifierSettings.guesses`, `QuizRules` |
 | **Hints Modifier** | **Hints** (default) or **No hints**: no Hint after a wrong Try, and the Prompt doesn't open Country Info (it says "Hints are disabled"). Icon: lightbulb (crossed out for No hints). | `ModifierSettings.hints` |
+| **Results Modifier** | **Shown** (default) or **Hidden** (request 14): a found Prompt only shows its colour for a moment, and a Missed one until Confirmed; then it is land again, so the Map doesn't show which Countries are left. It stays land when the Quiz Run is finished (feedback 12). Icon: eye (crossed out for Hidden). | `ModifierSettings.results`, `FadingResult` |
 | **Quiz Set** | The shuffled Countries a Quiz Run asks: those in the selected Categories that the Game Mode can ask (Flag only skips Countries without a Distinct Flag; Capital to Location skips Countries without a capital). | `QuizRun.quizSet` |
 | **Quiz Run** | One play-through of a Quiz: every Country in the Quiz Set is asked once. | `QuizRun` — `src/quiz/quiz-run.ts` |
 | **Prompt** | The Country currently asked. | `QuizRun.prompt` |
@@ -146,3 +147,7 @@ A wrong Try also briefly flashes the clicked Country dark red.
 - **US States can be quizzed on their own, and replace the USA** (request 11 and its follow-up): with North
   America ticked, the USA is left out. The District of Columbia counts as one of them. Flag only skipped them until they got Flags (request 12).
 - **France's Country Info figures are for metropolitan France**, because its overseas regions are separate Countries.
+- **Hidden hides Missed Prompts too** (request 14 asks for correct ones): once Confirmed they turn back to land as
+  well, or the red ones would still narrow down what's left. They don't come back when the Quiz Run is finished
+  (feedback 12): the Map just stays land.
+  Practice Mode ignores the Results Modifier: it never keeps results anyway.
