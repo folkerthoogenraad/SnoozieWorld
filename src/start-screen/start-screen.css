@@ -1,4 +1,5 @@
 .start-screen__group {
+  min-width: 0; /* A fieldset is min-content wide by default, which one-line contents would stretch. */
   margin: 0;
   padding: 0;
   border: none;
@@ -11,10 +12,73 @@
   font-weight: 600;
 }
 
-.start-screen__categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 2px 12px;
+/* The button showing the Selection, which opens the Selection page. */
+.start-screen__selection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.start-screen__selection:hover {
+  border-color: var(--color-accent);
+  background: var(--color-highlight-bg);
+}
+
+.start-screen__selection:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* The maps of the chosen Continents, overlapping. */
+.start-screen__selection-icons {
+  display: flex;
+  flex: none;
+}
+
+.start-screen__selection-icons .continent-icon {
+  width: 40px;
+  height: 28px;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.start-screen__selection-icons .continent-icon + .continent-icon {
+  margin-left: -14px;
+}
+
+.start-screen__selection-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.start-screen__selection-title {
+  display: block;
+  font-weight: 600;
+}
+
+.start-screen__selection-detail {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.start-screen__selection-arrow {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .start-screen__option {
@@ -38,10 +102,6 @@
   accent-color: var(--color-accent);
 }
 
-.start-screen__option--us-states {
-  margin-top: 4px;
-}
-
 .start-screen__option--game-mode {
   align-items: flex-start;
 }
@@ -59,13 +119,6 @@
   display: block;
   color: var(--color-text-muted);
   font-size: 0.9rem;
-}
-
-.start-screen__count {
-  margin-left: auto;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .start-screen__modifiers {

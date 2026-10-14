@@ -1,5 +1,6 @@
 import type { ModifierSettings } from '../quiz/modifier.ts'
 import type { QuizSettings } from '../quiz/quiz-settings.ts'
+import { selectionKey, selectionKeyFromCategories } from '../quiz/selection.ts'
 
 /** One finished Quiz Run on a Leaderboard. */
 export interface LeaderboardEntry {
@@ -20,17 +21,25 @@ export interface LeaderboardEntry {
 export const LEADERBOARD_SIZE = 10
 const STORAGE_KEY = 'snoozieworld.leaderboards'
 
-type StoredLeaderboards = Record<string, LeaderboardEntry[]>
+type Leaderboards = Record<string, LeaderboardEntry[]>
 
 /**
- * Each combination of Categories and Game Mode has its own Leaderboard, with
- * the top 10 Scores. "Individual states in USA" counts as a Category: it
- * adds `|us-states` to the key. Modifiers don't get their own Leaderboard: each entry
+ * Version 2 (plan 13) has Selection keys. Version 1 was the Leaderboards
+ * object itself, with Category keys.
+ */
+interface StoredLeaderboards {
+  version: 2
+  leaderboards: Leaderboards
+}
+
+/**
+ * Each combination of Selection and Game Mode has its own Leaderboard, with
+ * the top 10 Scores, e.g. `name-to-location|europe` (see `selectionKey`).
+ * Modifiers don't get their own Leaderboard: each entry
  * shows the Modifiers it was played with. Stored in this browser only (localStorage).
  */
 export function leaderboardKey(settings: QuizSettings): string {
-  const key = `${settings.gameModeId}|${[...settings.categoryIds].sort().join(',')}`
-  return settings.usStates ? `${key}|us-states` : key
+  return `${settings.gameModeId}|${selectionKey(settings.selection)}`
 }
 
 export function loadLeaderboard(settings: QuizSettings): LeaderboardEntry[] {
@@ -47,7 +56,8 @@ export function addToLeaderboard(settings: QuizSettings, entry: LeaderboardEntry
   const entries = ranked([...(all[key] ?? []), entry])
   all[key] = entries
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+    const stored: StoredLeaderboards = { version: 2, leaderboards: all }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
   } catch {
     // Storage unavailable: the Leaderboard only lasts for this session's screens.
   }
@@ -62,7 +72,37 @@ function ranked(entries: LeaderboardEntry[]): LeaderboardEntry[] {
 // The Flag to Location Game Mode became Name to Location with the Flag Modifier on Flag only.
 const OLD_FLAG_TO_LOCATION = 'flag-to-location|'
 
-function loadAll(): StoredLeaderboards {
+/** Moves the entries under `key` to `newKey`, merged with any already there. */
+function move(all: Leaderboards, key: string, newKey: string, change = (entry: LeaderboardEntry) => entry): void {
+  if (newKey === key) return
+  all[newKey] = ranked([...(all[newKey] ?? []), ...all[key].map(change)])
+  delete all[key]
+}
+
+/**
+ * Version 1 to 2: Category keys become Selection keys. `<game mode>|<categories>`
+ * plus `|us-states` with "Individual states in USA": `south-america` becomes
+ * `south-america/south-america` (South America has its territories by default
+ * now, the old entries don't), and the US States become the US states Section.
+ * Runs once: the result is saved as version 2 with the next entry, and from
+ * then on `south-america` means the new default.
+ */
+function moveCategoryKeys(all: Leaderboards): void {
+  for (const key of Object.keys(all)) {
+    // Before Modifiers, Flag only was a Game Mode of its own.
+    if (key.startsWith(OLD_FLAG_TO_LOCATION)) {
+      const newKey = `name-to-location|${key.slice(OLD_FLAG_TO_LOCATION.length)}`
+      move(all, key, newKey, (entry) => ({ ...entry, modifiers: { flag: 'flag-only' as const } }))
+    }
+  }
+  for (const key of Object.keys(all)) {
+    const [gameModeId, categories = '', usStates] = key.split('|')
+    const selection = selectionKeyFromCategories(categories, usStates === 'us-states')
+    if (selection !== null) move(all, key, `${gameModeId}|${selection}`)
+  }
+}
+
+function loadAll(): Leaderboards {
   let stored: unknown
   try {
     stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}')
@@ -70,13 +110,8 @@ function loadAll(): StoredLeaderboards {
     return {}
   }
   if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return {}
-  const all = stored as StoredLeaderboards
-  for (const key of Object.keys(all)) {
-    if (!key.startsWith(OLD_FLAG_TO_LOCATION)) continue
-    const newKey = `name-to-location|${key.slice(OLD_FLAG_TO_LOCATION.length)}`
-    const moved = all[key].map((entry) => ({ ...entry, modifiers: { flag: 'flag-only' as const } }))
-    all[newKey] = ranked([...(all[newKey] ?? []), ...moved])
-    delete all[key]
-  }
+  if ((stored as StoredLeaderboards).version === 2) return (stored as StoredLeaderboards).leaderboards ?? {}
+  const all = stored as Leaderboards
+  moveCategoryKeys(all)
   return all
 }

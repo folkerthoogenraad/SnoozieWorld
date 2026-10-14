@@ -1,0 +1,343 @@
+/* The Selection page of the Start Screen. */
+
+.selection-page__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: -8px;
+}
+
+.selection-page__back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.selection-page__back:hover {
+  background: var(--color-surface-hover);
+}
+
+.selection-page__back:focus-visible,
+.selection-page__collapse:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.selection-page__back svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.selection-page__title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+/* ---- Left: the Continent cards ---- */
+.selection-page__continents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selection-page__continent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px 8px 14px;
+  border: 1px solid var(--color-surface-active);
+  border-radius: 12px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.selection-page__continent:hover {
+  background: var(--color-surface-hover);
+}
+
+.selection-page__continent--chosen {
+  border-color: var(--color-accent);
+}
+
+.selection-page__continent:has(:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Nothing to ask in the Game Mode (Antarctica in Capital to Location); the tooltip says so. */
+.selection-page__continent--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-page__continent--disabled:hover {
+  background: var(--color-surface);
+}
+
+.selection-page__continent-check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: inherit;
+}
+
+.selection-page__continent-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.selection-page__continent-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* What differs from the Continent's default, or a dash. */
+.selection-page__summary {
+  display: block;
+  overflow: hidden;
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selection-page__summary--empty {
+  color: var(--color-text-muted);
+}
+
+.selection-page__continent-count {
+  min-width: 2ch;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ---- Right: the Countries, per chosen Continent and Section ---- */
+.selection-page__countries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selection-page__countries-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.selection-page__total {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-page__empty {
+  margin: 8px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.selection-page__empty[hidden] {
+  display: none;
+}
+
+.selection-page__group {
+  margin-top: 12px;
+}
+
+/* A thin line between the Continents. */
+.selection-page__group + .selection-page__group {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-surface-active);
+}
+
+.selection-page__group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.selection-page__group-title span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Section's heading: a checkbox with its name and count, and an arrow that opens or closes it. */
+.selection-page__section-heading {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 8px -6px 2px;
+}
+
+.selection-page__section-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.selection-page__section-toggle:hover,
+.selection-page__collapse:hover {
+  background: var(--color-surface-active);
+}
+
+.selection-page__section-toggle input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: inherit;
+}
+
+.selection-page__section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selection-page__section--off .selection-page__section-label {
+  color: var(--color-text-muted);
+}
+
+.selection-page__section-count {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-page__collapse {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.selection-page__collapse svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(180deg);
+  transition: transform 0.25s;
+}
+
+.selection-page__section--collapsed .selection-page__collapse svg {
+  transform: none;
+}
+
+/* Opens and closes by animating the row's height between its content's height and 0. */
+.selection-page__body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.selection-page__section--collapsed .selection-page__body {
+  grid-template-rows: 0fr;
+}
+
+.selection-page__body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Two columns, indented to line up with the Section's name, so the headings stand out. */
+.selection-page__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+  margin: 0;
+  padding: 0 0 0 24px;
+  list-style: none;
+  transition: opacity 0.25s;
+}
+
+/* A Section that is off: its Countries stay visible, greyed out. */
+.selection-page__section--off .selection-page__list {
+  opacity: 0.35;
+}
+
+.selection-page__country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 0.9rem;
+}
+
+.selection-page__country-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selection-page__flag {
+  flex: none;
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--color-surface-active);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
+  object-fit: cover;
+}
+
+/* US State Flags are not 4:3 (Ohio's is a pennant): shown whole. */
+.selection-page__flag--state {
+  background: none;
+  box-shadow: none;
+  object-fit: contain;
+}
+
+/* A Country the Game Mode can't ask (the tooltip says why): greyed out. */
+.selection-page__country--unaskable {
+  opacity: 0.4;
+}
+
+/* The USA while its States are asked instead: crossed out. */
+.selection-page__country--replaced .selection-page__country-name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.selection-page__country--replaced .selection-page__flag {
+  opacity: 0.5;
+}

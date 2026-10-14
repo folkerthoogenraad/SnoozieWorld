@@ -21,10 +21,11 @@ src/
   practice/practice-progress.ts  Practice Progress storage (Levels per Skill, Streaks per Practice Set)
   practice/practice-mode.ts Practice Mode: plays a Practice Run on the Map and Navbar
   practice/practice-status.ts  Navbar content in Practice Mode (Streak and Learned pills + Prompt)
-  quiz/category.ts          Categories
+  quiz/selection.ts         Continents, Regions and Sections; the Countries, summary, label and key of a Selection;
+                            moving Category keys and settings from before plan 13
   quiz/game-mode.ts         Game Modes
   quiz/modifier.ts          Modifiers, their States and icons
-  quiz/quiz-settings.ts     Quiz Settings, picking the Quiz Set's Countries (incl. US States), Quiz Rules,
+  quiz/quiz-settings.ts     Quiz Settings, picking the Quiz Set's Countries, Quiz Rules,
                             Practice settings, upgrading old settings
   quiz/quiz-run.ts          Quiz Run: shuffle, Prompts, Tries, Prompt Results, Score, snapshot/restore (no DOM)
   quiz/quiz-session.ts      Quiz Session: saving/restoring the active Quiz Run (localStorage)
@@ -46,9 +47,11 @@ src/
   map/world-map.ts          WorldMap (the Map), incl. world repetition, Tiny Country Markers, Capital Dots,
                             Country States, Map Notice and Hint
   navbar/navbar.ts          Navbar
-  start-screen/             StartScreen (native <dialog>)
+  start-screen/start-screen.ts    StartScreen (native <dialog>) with its two pages
+  start-screen/selection-page.ts  Selection page (the second page of the Start Screen)
+  start-screen/continent-icon.ts  Continent Icons; continent-icons.json is generated (see Country dataset)
 scripts/
-  build-map-data.mjs        builds public/data/countries.topo.json
+  build-map-data.mjs        builds public/data/countries.topo.json and src/start-screen/continent-icons.json
 public/data/
   countries.topo.json       generated Country dataset (committed)
 .github/workflows/deploy.yml  builds and deploys to GitHub Pages (see Deployment)
@@ -70,7 +73,7 @@ through its small API; the Map knows nothing about Modes:
 - `showCountry(id)`: animated pan (d3-transition) that brings the whole Country on screen. It zooms out only if
   needed, and is clamped to the world's edges. Used by the Focus button.
 - `setStatesShown(shown)`: shows the US States instead of the USA (see Country dataset). Quiz and Practice Mode
-  turn it on when `settings.usStates`, and off in `stop()`.
+  turn it on when the Selection has the US states Section (`includesUsStates`), and off in `stop()`.
 - `setNotice({ text, action? } | null)`: the Map Notice. It stops pointer, touch and wheel events, so pressing its
   button doesn't pan the Map. `setPulsingCountry` and `setSelectedCountry` also move the paths to the end of their
   group, so they are drawn on top.
@@ -112,10 +115,11 @@ otherwise the one due soonest. Never the same Country twice in a row. `promptNum
 a Country asked again.
 
 **Practice Progress** (feedback 11) lives in `localStorage['snoozieworld.practice']`:
-`{ version: 1, skills: { [skillKey]: { clock, levels: { [countryId]: { level, due } } } }, streaks: { [practiceSetKey]: { current, best } } }`.
+`{ version: 2, skills: { [skillKey]: { clock, levels: { [countryId]: { level, due } } } }, streaks: { [practiceSetKey]: { current, best } } }`.
 `skillKey` is the Game Mode plus the Flag State (`name-to-location|flag-only`), so Levels carry over between
-Practice Sets; `practiceSetKey` adds the sorted Categories and `|us-states`, so every Practice Set keeps its own
-live and best Streak. `PracticeRun` changes the loaded objects in place and `PracticeMode` saves them after every
+Practice Sets; `practiceSetKey` adds the Selection's key (see Leaderboard), so every Practice Set keeps its own
+live and best Streak. Version 1 had the Categories there (plus `|us-states`); its Streak keys are moved on load like
+the Leaderboard's, and the result is saved as version 2 with the next Try. `PracticeRun` changes the loaded objects in place and `PracticeMode` saves them after every
 Try, so leaving (or reloading) keeps the live Streak. Entries that fail validation are ignored. The Start Screen's
 split menu reads the same storage for its stats and *Reset practice progress* (`resetPracticeProgress`: drops the
 Practice Set's Levels and live Streak, keeps the best).
@@ -158,7 +162,10 @@ their value but are ignored, so switching Game Mode back restores them. Effects:
   coloured when the Quiz Run is finished (feedback 12).
 
 `normalizeQuizSettings` upgrades stored settings (Quiz Settings and Quiz Session): missing Modifiers get their
-default, a missing `usStates` becomes false, and the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only.
+default, the old `flag-to-location` Game Mode becomes `name-to-location` + Flag only, and `categoryIds` + `usStates`
+(before plan 13) become a Selection (`selectionFromCategories`: a Continent Category becomes its Regions, so South
+America without its territories; *Individual states in USA* the US states Section; *Overseas Territories* is
+dropped). Unknown Section keys are dropped.
 
 ## Quiz Session
 
@@ -182,19 +189,40 @@ Run's End Screen says *Perfect!* and shows the Streak it carries over.
 
 ## Leaderboard
 
-`localStorage['snoozieworld.leaderboards']` holds `{ [key]: LeaderboardEntry[] }`. The key is
-`<gameModeId>|<sorted categoryIds>`, e.g. `name-to-location|asia,europe`, plus `|us-states` when Individual
-States in USA is ticked (`usStates`), e.g. `name-to-location||us-states` for the States alone. Modifiers are not in the key: each entry
+`localStorage['snoozieworld.leaderboards']` holds `{ version: 2, leaderboards: { [key]: LeaderboardEntry[] } }`.
+The key is `<gameModeId>|<selection key>`. The Selection key (`selectionKey`) is the Section keys that are on,
+sorted, where a Continent at its default Sections is written as just its id: `name-to-location|asia,europe`,
+`name-to-location|europe/balkans`, `name-to-location|north-america/us-states`. So the keys from before plan 13 keep
+their meaning. Modifiers are not in the key: each entry
 stores `modifiers` (only those its Game Mode uses; missing = all default) and the view shows the icons of the
 non-default ones. Each list is kept sorted (Score desc, then date asc) and cut to 10. Unreadable storage counts as
-empty; failed writes are ignored. On load, `flag-to-location|…` lists are merged into `name-to-location|…` with
-`modifiers: { flag: 'flag-only' }`; the result is written back on the next save.
+empty; failed writes are ignored.
+
+Version 1 was the `{ [key]: LeaderboardEntry[] }` object itself, with `<gameModeId>|<sorted categoryIds>` keys plus
+`|us-states` for *Individual states in USA*. On load it is moved over (`selectionKeyFromCategories`):
+`flag-to-location|…` lists are merged into `name-to-location|…` with `modifiers: { flag: 'flag-only' }`;
+`south-america` becomes `south-america/south-america` (the old entries are without territories, which are now
+South America's default); `north-america` + `|us-states` becomes
+`north-america/islands,north-america/mainland,north-america/us-states`, and `|us-states` alone
+`north-america/us-states`. Keys with `overseas-territories` stay as they are, unreachable. The result is written back
+as version 2 on the next save, so the move runs once: afterwards `south-america` means the new default.
+
+The Quiz Streaks (`snoozieworld.quizStreaks`) use the Leaderboard key too, but were not moved: a Quiz Streak from
+before plan 13 under a changed key just starts again at 0.
 
 ## Screens
 
 `.screen--fixed-height` (Start, Pause and End Screen) fixes the dialog height to `min(100dvh − 32px, max(60vh, 680px))`, or the
 full height on narrow screens. On wide screens each panel scrolls on its own, and on the End Screen only the lists
 scroll. When stacked, the whole dialog scrolls.
+
+The Start Screen has two pages in one dialog: its own `<form>` and the Selection page (a `.screen__columns` that is not
+a form, so its buttons never close the dialog). `StartScreen.showSelectionPage` hides one and shows the other, so the
+size stays the same; opening the Start Screen always shows its own page, and Escape on the Selection page goes back
+instead of closing. The Selection page keeps its own state (the chosen Continents and their Sections, which Sections
+are closed) and calls `onChange`; `StartScreen.update` then gives it the Game Mode (`SelectionPage.update`) and reads
+the Selection back. It builds the Country items of a Continent once and only toggles classes and counts afterwards,
+so the Flag `<img>`s never reload and a Section can animate its height (`grid-template-rows` 1fr ↔ 0fr).
 
 The Start Screen and End Screen are `<dialog>`s whose buttons submit with a `value`. The action runs in the
 dialog's `close` event, based on `returnValue`. Escape closes with an empty `returnValue`, so nothing happens.
@@ -257,8 +285,10 @@ The script:
    areas into their holder (`MERGE_INTO`). All other Map Units are merged back into their Country. Merging on the
    shared topology gives exact shapes.
 3. Sets the properties the app uses: `name` (with `NAME_OVERRIDES`), `kind` (sovereign/territory/other, see
-   `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`), `isoA2`, `labelPoint`,
-   `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
+   `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`: an Overseas Territory belongs to
+   the nearest Continent, M49 decides a tie), `region` (plan 13: `ISLAND_COUNTRIES`, `BALKANS`, `MIDDLE_EAST`,
+   Natural Earth's subregions for Oceania and the Caribbean; null for Overseas Territories and Other Areas except
+   Antarctica), `isoA2`, `labelPoint`, `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
    because identical flags differ only in their ids. US States are checked against their own Flags (all distinct),
    so run `npm run fetch:us-state-flags` first when those are missing.
 4. Adds the 50 US States and the District of Columbia from Admin 1 as Countries of kind `state` (id: ISO 3166-2,
@@ -266,17 +296,24 @@ The script:
    Admin 1 borders match Admin 0's vertex for vertex, so in the shared topology the States share arcs with the USA
    and its neighbours. The Map draws them above the USA but hides them (CSS on `.map--us-states`,
    `.map__country--us-state`, `.map__country--has-states`, `.map__capital-dot--us-state`) unless `setStatesShown`.
-   With "Individual states in USA" ticked, `quizCountries` asks them, alone or with the Categories, and never the
-   USA.
+   With the US states Section on, `quizCountries` asks them, and never the USA.
 5. Simplifies the shapes to ~30% of their points, but never simplifies tiny Countries. Writes TopoJSON
    (~1.7 MB, ~600 KB gzipped).
+6. Prints what each Continent can quiz per Region, territories and uninhabited islands (compare with the table in
+   plan 13).
+7. Draws the Continent Icons into `src/start-screen/continent-icons.json`: the finished topology simplified again
+   (quantile 0.997), Mercator boxes per Continent (`ICON_BOXES`), Antarctica orthographic from below, 64 × 44 px.
+   Points are rounded to half pixels, points on a straight line and rings under 1 px² dropped, and the paths written
+   with relative coordinates: ~43 KB for all seven (~5 KB gzipped). The app imports the file dynamically, as a
+   chunk of its own.
 
 Downloads are cached in `scripts/.cache/` (git-ignored).
 
 Known limits of the source data:
 - Natural Earth's shapes are generalised for 1:10 million scale. Deep zoom shows straight coastline segments, and
   Vatican City is a ~110 m square rather than its real outline.
-- 313 Countries: 198 Sovereign States, 57 Overseas Territories, 7 Other Areas, 51 US States.
+- 313 Countries: 198 Sovereign States, 57 Overseas Territories, 7 Other Areas, 51 US States. Askable: all but 6 Other
+  Areas.
 
 ## Country Info
 

@@ -11,6 +11,7 @@ import { saveQuizSession } from './quiz-session.ts'
 import { activeModifiers, promptInfoGivesAnswer, type QuizSettings } from './quiz-settings.ts'
 import { QuizStatus } from './quiz-status.ts'
 import { saveQuizStreak } from './quiz-streak.ts'
+import { includesUsStates } from './selection.ts'
 import { Stopwatch } from './stopwatch.ts'
 
 /**
@@ -108,7 +109,7 @@ export class QuizMode implements Mode {
 
   start(): void {
     this.map.clearCountryStates()
-    this.map.setStatesShown(this.settings.usStates)
+    this.map.setStatesShown(includesUsStates(this.settings.selection))
     for (const country of this.allCountries) {
       if (!this.run.includes(country)) this.map.setCountryState(country.id, 'excluded')
     }

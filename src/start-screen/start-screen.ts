@@ -4,7 +4,6 @@ import { loadLeaderboard } from '../leaderboard/leaderboard.ts'
 import { loadSkillProgress, loadStreak, resetPracticeProgress } from '../practice/practice-progress.ts'
 import { countLearned } from '../practice/practice-run.ts'
 import { createStreakLabel } from '../streak/streak.ts'
-import { CATEGORIES } from '../quiz/category.ts'
 import { GAME_MODES, gameModeById, type GameModeId } from '../quiz/game-mode.ts'
 import {
   isDefaultState,
@@ -21,14 +20,18 @@ import {
   saveQuizSettings,
   type QuizSettings,
 } from '../quiz/quiz-settings.ts'
+import { chosenContinents, selectionLabel } from '../quiz/selection.ts'
 import '../screen/screen.css'
+import { createContinentIcon } from './continent-icon.ts'
+import { SelectionPage } from './selection-page.ts'
 import './start-screen.css'
 
 /**
  * The Start Screen: the modal shown when the app opens, and when the Navbar
- * title is clicked. Left: the player ticks Categories (and optionally
- * "Individual states in USA", on its own or replacing the USA in North
- * America), picks a Game Mode and
+ * title is clicked. Left: the *What do you want to quiz?* button shows the
+ * Selection (small maps of the chosen Continents, its label and how many
+ * Countries it holds) and opens the Selection page in the same dialog, at the
+ * same size. Below it the player picks a Game Mode and
  * sets its Modifiers to start a Quiz, or chooses Explore Mode. The Explore
  * button is a split button: its arrow opens a menu with Practice Mode, which
  * uses the same choice (but only the Flag Modifier), and shows its live and
@@ -40,6 +43,8 @@ import './start-screen.css'
 export class StartScreen {
   readonly element: HTMLDialogElement
   private readonly form: HTMLFormElement
+  private readonly selectionPage: SelectionPage
+  private readonly selectionButton: HTMLButtonElement
   private readonly startButton: HTMLButtonElement
   private readonly practiceButton: HTMLButtonElement
   private readonly practiceStats: HTMLElement
@@ -67,24 +72,17 @@ export class StartScreen {
         <div class="screen__panel">
           <h1 class="screen__title">SnoozieWorld</h1>
 
-          <fieldset class="start-screen__group">
-            <legend class="start-screen__legend">What do you want to quiz?</legend>
-            <div class="start-screen__categories">
-              ${CATEGORIES.map(
-                (category) => `
-                  <label class="start-screen__option">
-                    <input type="checkbox" name="category" value="${category.id}" />
-                    <span>${category.label}</span>
-                    <span class="start-screen__count" data-category-id="${category.id}"></span>
-                  </label>`,
-              ).join('')}
-            </div>
-            <label class="start-screen__option start-screen__option--us-states" title="With North America, these replace the USA">
-              <input type="checkbox" name="us-states" />
-              <span>Individual states in USA</span>
-              <span class="start-screen__count" data-us-states-count></span>
-            </label>
-          </fieldset>
+          <div class="start-screen__group">
+            <h2 class="start-screen__legend">What do you want to quiz?</h2>
+            <button type="button" class="start-screen__selection">
+              <span class="start-screen__selection-icons"></span>
+              <span class="start-screen__selection-text">
+                <span class="start-screen__selection-title"></span>
+                <span class="start-screen__selection-detail"></span>
+              </span>
+              <svg class="start-screen__selection-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+            </button>
+          </div>
 
           <fieldset class="start-screen__group">
             <legend class="start-screen__legend">Game mode</legend>
@@ -128,6 +126,7 @@ export class StartScreen {
       </form>
     `
     this.form = this.element.querySelector('form')!
+    this.selectionButton = this.element.querySelector('.start-screen__selection')!
     this.startButton = this.element.querySelector('button[value="start"]')!
     this.practiceButton = this.element.querySelector('button[value="practice"]')!
     this.practiceStats = this.element.querySelector('.start-screen__practice-stats')!
@@ -138,15 +137,19 @@ export class StartScreen {
     this.modifierButtons = this.element.querySelector('.start-screen__modifiers')!
     this.modifierExplanation = this.element.querySelector('.start-screen__modifier-explanation')!
 
+    // The second page of the dialog: the Selection page.
+    this.selectionPage = new SelectionPage({
+      onChange: () => this.update(),
+      onDone: () => this.showSelectionPage(false),
+    })
+    this.element.append(this.selectionPage.element)
+    this.selectionButton.addEventListener('click', () => this.showSelectionPage(true))
+
     const settings = loadQuizSettings()
     this.modifiers = settings.modifiers
-    for (const input of this.form.querySelectorAll<HTMLInputElement>('input')) {
-      input.checked =
-        input.name === 'category'
-          ? settings.categoryIds.includes(input.value)
-          : input.name === 'us-states'
-            ? settings.usStates
-            : input.value === settings.gameModeId
+    this.selectionPage.setSelection(settings.selection)
+    for (const input of this.form.querySelectorAll<HTMLInputElement>('input[name="game-mode"]')) {
+      input.checked = input.value === settings.gameModeId
     }
     this.form.addEventListener('change', () => this.update())
     this.modifierButtons.addEventListener('click', (event) => {
@@ -177,17 +180,32 @@ export class StartScreen {
     })
   }
 
-  /** Provides the Countries, once loaded, to count what each Category contains. */
+  /** Provides the Countries, once loaded, to count and list what the Selection contains. */
   setCountries(countries: readonly Country[]): void {
     this.countries = countries
+    this.selectionPage.setCountries(countries)
     this.update()
   }
 
   open(): void {
+    this.showSelectionPage(false, false)
     // Show the latest Leaderboard, which a finished Quiz Run may have changed.
     this.update()
     this.element.returnValue = ''
     this.element.showModal()
+  }
+
+  /**
+   * Shows the Selection page instead of the Start Screen's own page, or goes
+   * back to it. Both fill the same dialog, so its size stays the same.
+   */
+  private showSelectionPage(shown: boolean, focus = true): void {
+    this.setModeMenuOpen(false)
+    this.form.hidden = shown
+    this.selectionPage.element.hidden = !shown
+    if (!focus) return
+    if (shown) this.selectionPage.focus()
+    else this.selectionButton.focus()
   }
 
   /** The split button's menu: opened by its arrow; closed by a click elsewhere or Escape. */
@@ -201,8 +219,13 @@ export class StartScreen {
       const target = event.target as Element
       if (!this.modeMenu.contains(target) && !this.modeMenuToggle.contains(target)) this.setModeMenuOpen(false)
     })
-    // Escape closes the menu instead of the Start Screen.
+    // Escape closes the menu, or the Selection page, instead of the Start Screen.
     this.element.addEventListener('cancel', (event) => {
+      if (!this.selectionPage.element.hidden) {
+        event.preventDefault()
+        this.showSelectionPage(false)
+        return
+      }
       if (!this.modeMenuOpen) return
       event.preventDefault()
       this.setModeMenuOpen(false)
@@ -216,14 +239,26 @@ export class StartScreen {
     this.modeMenuToggle.setAttribute('aria-expanded', String(open))
   }
 
+  private gameModeId(): GameModeId {
+    return new FormData(this.form).get('game-mode') as GameModeId
+  }
+
+  /** The chosen settings. The Selection depends on the Game Mode given to the Selection page in `update`. */
   private settings(): QuizSettings {
-    const data = new FormData(this.form)
-    return {
-      categoryIds: data.getAll('category') as string[],
-      usStates: data.has('us-states'),
-      gameModeId: data.get('game-mode') as GameModeId,
-      modifiers: this.modifiers,
-    }
+    return { selection: this.selectionPage.selection(), gameModeId: this.gameModeId(), modifiers: this.modifiers }
+  }
+
+  /** The *What do you want to quiz?* button: maps of the chosen Continents, the label and the count. */
+  private updateSelectionButton(settings: QuizSettings, total: number): void {
+    const continents = chosenContinents(settings.selection)
+    const icons = continents.length
+      ? continents.map((continent) => createContinentIcon(continent.id, true))
+      : [createContinentIcon('europe')]
+    this.selectionButton.querySelector('.start-screen__selection-icons')!.replaceChildren(...icons)
+    this.selectionButton.querySelector('.start-screen__selection-title')!.textContent = selectionLabel(settings.selection)
+    this.selectionButton.querySelector('.start-screen__selection-detail')!.textContent = this.countries.length
+      ? `${total} ${total === 1 ? 'country' : 'countries'} · change`
+      : 'change'
   }
 
   /** The Modifier buttons of the chosen Game Mode, and the explanation of the one clicked last. */
@@ -290,17 +325,12 @@ export class StartScreen {
   }
 
   private update(): void {
+    const gameModeId = this.gameModeId()
+    this.selectionPage.update(gameModeById(gameModeId), this.modifiers)
     const settings = this.settings()
     this.updateModifiers(settings.gameModeId)
-    for (const count of this.form.querySelectorAll<HTMLElement>('[data-category-id]')) {
-      // Without the States, but without the USA too while they replace it.
-      const categorySettings = { ...settings, categoryIds: [count.dataset.categoryId!] }
-      const countries = quizCountries(categorySettings, this.countries).filter((c) => c.kind !== 'state')
-      count.textContent = this.countries.length ? String(countries.length) : ''
-    }
-    const states = quizCountries({ ...settings, categoryIds: [], usStates: true }, this.countries)
-    this.form.querySelector('[data-us-states-count]')!.textContent = this.countries.length ? String(states.length) : ''
     const total = quizCountries(settings, this.countries).length
+    this.updateSelectionButton(settings, total)
     // Stays enabled while loading, so it can take the autofocus when the Start Screen opens.
     this.startButton.disabled = this.countries.length > 0 && total === 0
     this.practiceButton.disabled = this.startButton.disabled

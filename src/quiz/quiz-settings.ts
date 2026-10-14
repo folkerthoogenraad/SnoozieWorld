@@ -1,22 +1,31 @@
 import type { Country } from '../country/country.ts'
-import { CATEGORIES } from './category.ts'
 import { GAME_MODES, gameModeById, type GameModeId } from './game-mode.ts'
 import { DEFAULT_MODIFIERS, normalizeModifiers, type ModifierSettings } from './modifier.ts'
 import type { QuizRules } from './quiz-run.ts'
+import {
+  CONTINENTS,
+  defaultSelection,
+  normalizeSelection,
+  selectionCountries,
+  selectionFromCategories,
+} from './selection.ts'
 
 /** What the player chose on the Start Screen. */
 export interface QuizSettings {
-  categoryIds: string[]
-  /** "Individual states in USA": asks the US States, and never the USA as a whole. */
-  usStates: boolean
+  /**
+   * The Selection: the keys of the Sections that are on, e.g. `['europe/mainland',
+   * 'europe/balkans', 'europe/islands', 'north-america/islands', 'north-america/territories']`.
+   * The Start Screen leaves out a Continent the Game Mode has nothing to ask in (Antarctica in
+   * Capital to Location), so it is not in the Leaderboard key or the label either.
+   */
+  selection: string[]
   gameModeId: GameModeId
   modifiers: ModifierSettings
 }
 
 const STORAGE_KEY = 'snoozieworld.quizSettings'
 const DEFAULT_SETTINGS: QuizSettings = {
-  categoryIds: ['europe'],
-  usStates: false,
+  selection: defaultSelection(CONTINENTS.find((continent) => continent.id === 'europe')!),
   gameModeId: 'name-to-location',
   modifiers: DEFAULT_MODIFIERS,
 }
@@ -24,14 +33,9 @@ const DEFAULT_SETTINGS: QuizSettings = {
 /** The Countries a Quiz with these settings asks about, in no particular order. */
 export function quizCountries(settings: QuizSettings, countries: readonly Country[]): Country[] {
   const gameMode = gameModeById(settings.gameModeId)
-  const categories = CATEGORIES.filter((category) => settings.categoryIds.includes(category.id))
-  // The USA, when its States are asked instead (e.g. with North America).
-  const replaced = new Set(settings.usStates ? countries.map((country) => country.stateOf) : [])
-  const included = (country: Country) =>
-    country.kind === 'state'
-      ? settings.usStates
-      : !replaced.has(country.id) && categories.some((c) => c.includes(country))
-  return countries.filter((country) => included(country) && gameMode.canAsk(country, settings.modifiers))
+  return selectionCountries(settings.selection, countries).filter((country) =>
+    gameMode.canAsk(country, settings.modifiers),
+  )
 }
 
 /** How a Quiz Run with these settings is played, set by the Guesses Modifier. */
@@ -67,17 +71,22 @@ export function activeModifiers(settings: QuizSettings): Partial<ModifierSetting
 }
 
 /**
- * Turns stored settings into valid ones, or null when they are unusable.
- * Settings from before Modifiers existed may use the old Flag to Location
- * Game Mode, which is now Name to Location with the Flag Modifier on Flag only.
+ * Turns stored settings (Quiz Settings, or a Quiz Session's) into valid ones,
+ * or null when they are unusable. Old settings are moved over:
+ * - from before Modifiers existed, they may use the old Flag to Location Game
+ *   Mode, which is now Name to Location with the Flag Modifier on Flag only;
+ * - from before plan 13, they have Categories and "Individual states in USA"
+ *   instead of a Selection (see `selectionFromCategories`).
  */
 export function normalizeQuizSettings(stored: unknown): QuizSettings | null {
   if (!stored || typeof stored !== 'object') return null
-  const { categoryIds, usStates, gameModeId, modifiers } = stored as Record<string, unknown>
-  if (!Array.isArray(categoryIds)) return null
+  const { selection, categoryIds, usStates, gameModeId, modifiers } = stored as Record<string, unknown>
+  let normalizedSelection: string[]
+  if (Array.isArray(selection)) normalizedSelection = normalizeSelection(selection)
+  else if (Array.isArray(categoryIds)) normalizedSelection = selectionFromCategories(categoryIds, usStates === true)
+  else return null
   const normalized: QuizSettings = {
-    categoryIds: categoryIds.filter((id) => CATEGORIES.some((c) => c.id === id)),
-    usStates: usStates === true,
+    selection: normalizedSelection,
     gameModeId: 'name-to-location',
     modifiers: normalizeModifiers(modifiers),
   }

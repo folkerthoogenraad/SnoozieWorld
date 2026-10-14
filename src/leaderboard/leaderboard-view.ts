@@ -1,23 +1,21 @@
-import { CATEGORIES } from '../quiz/category.ts'
 import { gameModeById, type GameModeId } from '../quiz/game-mode.ts'
 import { DEFAULT_MODIFIERS, isDefaultState, MODIFIERS, modifierState, type ModifierSettings } from '../quiz/modifier.ts'
 import { formatScore } from '../quiz/quiz-run.ts'
 import { formatDuration } from '../quiz/stopwatch.ts'
 import type { QuizSettings } from '../quiz/quiz-settings.ts'
+import { selectionLabel } from '../quiz/selection.ts'
 import { LEADERBOARD_SIZE, type LeaderboardEntry } from './leaderboard.ts'
 import './leaderboard.css'
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 
 /**
- * "Europe, Asia · Name to Location" (with "US states" when its checkbox is
- * ticked), and with `withModifiers` the Modifiers
+ * "Asia, Europe (without the Balkans) · Name to Location" (see `selectionLabel`),
+ * and with `withModifiers` the Modifiers
  * that aren't at their default: "Europe · Name to Location · Flag only, Sudden death".
  */
 export function describeQuizSettings(settings: QuizSettings, withModifiers = false): string {
-  const categories = CATEGORIES.filter((c) => settings.categoryIds.includes(c.id)).map((c) => c.label)
-  if (settings.usStates) categories.push('US states')
-  const parts = [categories.length ? categories.join(', ') : 'No categories', gameModeById(settings.gameModeId).label]
+  const parts = [selectionLabel(settings.selection), gameModeById(settings.gameModeId).label]
   const modifiers = changedModifiers(settings.gameModeId, settings.modifiers).map((id) =>
     modifierState(id, settings.modifiers).label,
   )

@@ -13,18 +13,22 @@
 //
 // The US States (Admin 1) are added as extra Countries of kind "state", lying
 // on top of the USA. The Map only shows them, instead of the USA, during a Quiz
-// with "Individual states in USA". Admin 1 borders match Admin 0 exactly, so
+// with the US states Section. Admin 1 borders match Admin 0 exactly, so
 // the States share their arcs with the USA and its neighbours.
 //
+// Every Sovereign State, US State and Antarctica gets the Region of its
+// Continent it lies in (see regionOf), and every Continent a small map for the
+// Start Screen (the Continent Icons).
+//
 // Usage: npm run build:map-data
-// Output: public/data/countries.topo.json
+// Output: public/data/countries.topo.json, src/start-screen/continent-icons.json
 
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { geoArea } from 'd3-geo'
+import { geoArea, geoMercator, geoOrthographic, geoPath } from 'd3-geo'
 import { topology } from 'topojson-server'
 import { presimplify, quantile, simplify } from 'topojson-simplify'
 import { feature, merge, quantize } from 'topojson-client'
@@ -36,6 +40,8 @@ const cacheDir = join(root, 'scripts', '.cache')
 const flagDir = join(root, 'node_modules', 'flag-icons', 'flags', '4x3')
 const stateFlagDir = join(root, 'src', 'country', 'us-state-flags')
 const outputPath = join(root, 'public', 'data', 'countries.topo.json')
+const iconsPath = join(root, 'src', 'start-screen', 'continent-icons.json')
+const countryInfoPath = join(root, 'src', 'country', 'country-info.json')
 
 // Fraction of points (ranked by Visvalingam weight) kept after simplification.
 // Higher keeps more detail (and gives a bigger file).
@@ -77,19 +83,46 @@ const EXTRA_SOVEREIGN = ['CHN', 'FRA', 'FIN', 'DNK', 'GBR', 'NLD', 'USA', 'AUS',
 const OTHER_AREAS = ['ATA', 'SPI', 'BRT', 'PGA', 'BJN', 'SER', 'SCR']
 
 // Natural Earth puts some islands on "Seven seas (open ocean)", and Cyprus in Asia.
+// A territory belongs to the nearest Continent; the UN geoscheme (M49) decides
+// when two are about as near (plan 13).
 const CONTINENT_OVERRIDES = {
   REU: 'Africa',
   SYC: 'Africa',
   MUS: 'Africa',
   SHN: 'Africa',
   MDV: 'Asia',
-  IOT: 'Asia',
+  IOT: 'Asia', // about 600 km south of the Maldives
   ATF: 'Antarctica',
   HMD: 'Antarctica',
-  SGS: 'Antarctica',
+  SGS: 'South America', // as far from the Falklands as from Antarctica; M49 says South America
   CLP: 'North America',
   CYP: 'Europe',
+  WSB: 'Europe', // Akrotiri and Dhekelia lie on Cyprus
+  ESB: 'Europe',
+  UMI: 'Oceania', // all but Navassa lie in the Pacific
 }
+
+// The Regions of the Continents (plan 13). A Sovereign State not listed here is
+// on its Continent's Mainland; in Oceania the Region is Natural Earth's
+// subregion, and South America and Antarctica are one Region each. Island
+// countries lie entirely on islands without a land border to the mainland
+// (Brunei and East Timor share an island with a neighbour, so they count too).
+const ISLAND_COUNTRIES = [
+  'CYP', 'GBR', 'IRL', 'ISL', 'MLT', // Europe
+  'COM', 'CPV', 'MDG', 'MUS', 'STP', 'SYC', // Africa
+  'BRN', 'IDN', 'JPN', 'LKA', 'MDV', 'PHL', 'SGP', 'TLS', 'TWN', // Asia
+]
+const BALKANS = ['ALB', 'BGR', 'BIH', 'HRV', 'KOS', 'MDA', 'MKD', 'MNE', 'ROU', 'SRB']
+// Bahrain is an island, but belongs here rather than under the islands.
+const MIDDLE_EAST = ['ARE', 'BHR', 'IRN', 'IRQ', 'ISR', 'JOR', 'KWT', 'LBN', 'OMN', 'PSX', 'QAT', 'SAU', 'SYR', 'TUR', 'YEM']
+const OCEANIA_REGIONS = {
+  'Australia and New Zealand': 'australia-nz',
+  Melanesia: 'melanesia',
+  Micronesia: 'micronesia',
+  Polynesia: 'polynesia',
+}
+// The one Other Area that can be asked: it has a Flag, but no capital.
+const ASKABLE_OTHER_AREA = 'ATA'
 
 // Natural Earth names that are wrong or not the common English name.
 const NAME_OVERRIDES = {
@@ -109,6 +142,45 @@ const NAME_OVERRIDES = {
 const STATES_OF = 'USA'
 const STATE_NAME_OVERRIDES = {
   'US-GA': 'Georgia (US state)',
+}
+
+// Continent Icons: a small map per Continent, the world in grey with the
+// Continent highlighted. Each Continent is cropped to its box (Mercator, in
+// degrees: [[west, south], [east, north]]); Antarctica is seen from below.
+const ICON_WIDTH = 64
+const ICON_HEIGHT = 44
+// Fraction of points kept: just enough for a recognisable outline, a few KB per icon.
+const ICON_SIMPLIFY_QUANTILE = 0.997
+const ICON_BOXES = {
+  africa: [[-26, -37], [60, 38]],
+  asia: [[26, -11], [150, 58]],
+  europe: [[-25, 34], [45, 71]],
+  'north-america': [[-168, 6], [-12, 76]],
+  'south-america': [[-88, -56], [-32, 13]],
+  oceania: [[110, -48], [205, 20]],
+}
+
+/**
+ * The Region of a Country within its Continent, e.g. "balkans". Null for
+ * Overseas Territories (each Continent quizzes them in Sections of their own)
+ * and Other Areas (never asked), except Antarctica.
+ */
+function regionOf(id, p) {
+  if (p.kind === 'state') return 'us-states'
+  if (id === ASKABLE_OTHER_AREA) return 'antarctica'
+  if (p.kind !== 'sovereign') return null
+  if (BALKANS.includes(id)) return 'balkans'
+  if (MIDDLE_EAST.includes(id)) return 'middle-east'
+  switch (p.continent) {
+    case 'Oceania':
+      return OCEANIA_REGIONS[p.subregion]
+    case 'South America':
+      return 'south-america'
+    case 'North America':
+      return p.subregion === 'Caribbean' ? 'islands' : 'mainland'
+    default:
+      return ISLAND_COUNTRIES.includes(id) ? 'islands' : 'mainland'
+  }
 }
 
 async function loadSource(name) {
@@ -185,6 +257,115 @@ async function markDistinctFlags(features) {
     f.properties.distinctFlag =
       fp !== null && (f.properties.kind === 'sovereign' || (!sovereignFlags.has(fp) && counts.get(fp) === 1))
   })
+}
+
+const continentId = (continent) => continent.toLowerCase().replace(' ', '-')
+
+/**
+ * An SVG path of `object` for a Continent icon. Draws on a half-pixel grid,
+ * skips points on a straight line, and drops rings smaller than a pixel, which
+ * keeps the icons small.
+ */
+function iconPath(projection, object) {
+  const rings = []
+  let ring
+  const context = {
+    moveTo(x, y) {
+      ring = []
+      rings.push(ring)
+      this.lineTo(x, y)
+    },
+    lineTo(x, y) {
+      const point = [Math.round(x * 2) / 2, Math.round(y * 2) / 2]
+      const last = ring.at(-1)
+      if (!last || last[0] !== point[0] || last[1] !== point[1]) ring.push(point)
+    },
+    closePath() {
+      for (let i = ring.length - 2; i > 0; i--) {
+        const [[ax, ay], [bx, by], [cx, cy]] = [ring[i - 1], ring[i], ring[i + 1]]
+        if ((bx - ax) * (cy - ay) === (by - ay) * (cx - ax)) ring.splice(i, 1)
+      }
+    },
+    arc() {},
+  }
+  geoPath(projection, context)(object)
+  const area = (r) =>
+    Math.abs(r.reduce((sum, [x, y], i) => {
+      const [x2, y2] = r[(i + 1) % r.length]
+      return sum + x * y2 - x2 * y
+    }, 0)) / 2
+  return rings
+    .filter((r) => r.length >= 3 && area(r) >= 1)
+    .map((r) => {
+      // The first point, then relative line-tos: "M12.5 30l.5 1.5-1 .5Z".
+      const steps = r.slice(1).flatMap(([x, y], i) => [x - r[i][0], y - r[i][1]])
+      return `M${svgNumbers(r[0])}l${svgNumbers(steps)}Z`
+    })
+    .join('')
+}
+
+/** Numbers as SVG path data, as short as possible: "1.5.5-2" is 1.5, 0.5 and -2. */
+function svgNumbers(numbers) {
+  let text = ''
+  for (const n of numbers) {
+    const number = String(n).replace(/^(-?)0\./, '$1.')
+    const last = text.slice(text.lastIndexOf(' ') + 1)
+    const joined = number.startsWith('-') || (number.startsWith('.') && /\.\d*$/.test(last.split('-').at(-1)))
+    text += !text || joined ? number : ` ${number}`
+  }
+  return text
+}
+
+/**
+ * The Continent icons, from the finished topology: `{ [continentId]: { world, land } }`,
+ * two SVG paths in a ICON_WIDTH × ICON_HEIGHT box. The US States are left out:
+ * the USA already covers them.
+ */
+function continentIcons(topo) {
+  const presimplified = presimplify(topo)
+  const simple = simplify(presimplified, quantile(presimplified, ICON_SIMPLIFY_QUANTILE))
+  const geometries = simple.objects.countries.geometries.filter((g) => g.properties.kind !== 'state')
+  const world = merge(simple, geometries)
+  const icons = {}
+  for (const id of [...Object.keys(ICON_BOXES), 'antarctica']) {
+    let projection
+    if (id === 'antarctica') {
+      projection = geoOrthographic()
+        .rotate([0, 90])
+        .fitExtent([[2, 2], [ICON_WIDTH - 2, ICON_HEIGHT - 2]], { type: 'Sphere' })
+        .clipAngle(45)
+      projection.scale(projection.scale() * 2.2)
+    } else {
+      const [[x0, y0], [x1, y1]] = ICON_BOXES[id]
+      const box = { type: 'MultiPoint', coordinates: [[x0, y0], [x1, y1], [x0, y1], [x1, y0]] }
+      projection = geoMercator()
+        .rotate([-(x0 + x1) / 2, 0])
+        .fitExtent([[2, 2], [ICON_WIDTH - 2, ICON_HEIGHT - 2]], box)
+        .clipExtent([[0, 0], [ICON_WIDTH, ICON_HEIGHT]])
+    }
+    const land = merge(simple, geometries.filter((g) => continentId(g.properties.continent) === id))
+    icons[id] = { world: iconPath(projection, world), land: iconPath(projection, land) }
+  }
+  return icons
+}
+
+/**
+ * What each Continent can quiz, per Region and for its (inhabited and
+ * uninhabited) Overseas Territories, to compare with the table in plan 13.
+ */
+async function reportRegions(features) {
+  const info = JSON.parse(await readFile(countryInfoPath, 'utf8'))
+  const counts = {}
+  for (const { id, properties: p } of features) {
+    const part =
+      p.kind === 'territory' ? (info[id]?.population === 0 ? 'uninhabited' : 'territories') : p.region
+    if (!part) continue
+    counts[p.continent] ??= {}
+    counts[p.continent][part] = (counts[p.continent][part] ?? 0) + 1
+  }
+  for (const [continent, parts] of Object.entries(counts).sort()) {
+    console.log(`  ${continent}: ${Object.entries(parts).map(([part, n]) => `${part} ${n}`).join(', ')}`)
+  }
 }
 
 function bboxArea(geometry) {
@@ -265,6 +446,8 @@ const ids = new Set()
 for (const f of features) {
   if (ids.has(f.id)) throw new Error(`Duplicate Country id ${f.id}`)
   ids.add(f.id)
+  f.properties.region = regionOf(f.id, f.properties)
+  if (f.properties.region === undefined) throw new Error(`No Region for ${f.id}`)
   f.properties.area = Math.round(geoArea(f) * EARTH_RADIUS_KM ** 2 * 10) / 10 // km², one decimal
 }
 await markDistinctFlags(features)
@@ -278,6 +461,7 @@ topo = quantize(topo, QUANTIZATION)
 await mkdir(dirname(outputPath), { recursive: true })
 const json = JSON.stringify(topo)
 await writeFile(outputPath, json)
+await writeFile(iconsPath, `${JSON.stringify(continentIcons(JSON.parse(json)), null, 2)}\n`)
 let points = 0
 for (const arc of topo.arcs) points += arc.length
 const kinds = Object.groupBy(features, (f) => f.properties.kind)
@@ -285,3 +469,6 @@ console.log(
   `Wrote ${features.length} Countries (${kinds.sovereign.length} sovereign, ${kinds.territory.length} territories, ` +
     `${kinds.other.length} other, ${kinds.state.length} states) to ${outputPath} (${points} points, ${(json.length / 1024).toFixed(0)} KiB)`,
 )
+await reportRegions(features)
+const iconsSize = (await readFile(iconsPath)).length
+console.log(`Wrote the Continent icons to ${iconsPath} (${(iconsSize / 1024).toFixed(0)} KiB)`)

@@ -5,8 +5,8 @@ import type { GeometryCollection, Topology } from 'topojson-specification'
 /**
  * - sovereign: a sovereign state (the 193 UN members plus Vatican City, Kosovo, Taiwan, Palestine and Western Sahara)
  * - territory: an Overseas Territory, belonging to a sovereign state
- * - other: anything else, e.g. Antarctica or unclaimed land like Bir Tawil
- * - state: a US State, lying on top of the USA; only shown and asked with "Individual states in USA"
+ * - other: anything else, e.g. Antarctica or unclaimed land like Bir Tawil; only Antarctica is asked
+ * - state: a US State, lying on top of the USA; only shown and asked with the US states Section
  */
 export type CountryKind = 'sovereign' | 'territory' | 'other' | 'state'
 
@@ -24,6 +24,12 @@ export interface Country {
   sovereign: string
   continent: Continent
   subregion: string
+  /**
+   * The Region of its Continent, e.g. "mainland", "balkans", "us-states" (see
+   * scripts/build-map-data.mjs). Set for Sovereign States, US States and
+   * Antarctica; null for Overseas Territories and the other Other Areas.
+   */
+  region: string | null
   /** [longitude, latitude] of a good point to place a label or Tiny Country Marker. */
   labelPoint: [number, number]
   /** Land area in km². */

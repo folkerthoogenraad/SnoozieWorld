@@ -21,6 +21,11 @@
   grid-template-columns: 1fr 1fr;
 }
 
+/* A screen with two pages (the Start Screen and its Selection page) hides the one not shown. */
+.screen__columns[hidden] {
+  display: none;
+}
+
 /* A fixed size, so content changes (like opening a list) never resize the screen:
    at least 60% of the viewport height, 680px on most screens, never taller than the viewport. */
 .screen--fixed-height {

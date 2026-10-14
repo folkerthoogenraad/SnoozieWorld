@@ -6,6 +6,7 @@ import type { Navbar } from '../navbar/navbar.ts'
 import { AnswerFeedback } from '../quiz/answer-feedback.ts'
 import { FadingResult } from '../quiz/fading-result.ts'
 import { promptInfoGivesAnswer, type QuizSettings } from '../quiz/quiz-settings.ts'
+import { includesUsStates } from '../quiz/selection.ts'
 import type { SoundPlayer } from '../sound/sound-player.ts'
 import { savePracticeProgress } from './practice-progress.ts'
 import type { PracticeRun } from './practice-run.ts'
@@ -62,7 +63,7 @@ export class PracticeMode implements Mode {
 
   start(): void {
     this.map.clearCountryStates()
-    this.map.setStatesShown(this.settings.usStates)
+    this.map.setStatesShown(includesUsStates(this.settings.selection))
     for (const country of this.allCountries) {
       if (!this.run.includes(country)) this.map.setCountryState(country.id, 'excluded')
     }

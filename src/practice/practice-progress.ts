@@ -1,4 +1,5 @@
 import { activeModifiers, type QuizSettings } from '../quiz/quiz-settings.ts'
+import { selectionKey, selectionKeyFromCategories } from '../quiz/selection.ts'
 
 /** How well the player knows one Country in one Skill (see PracticeRun). */
 export interface CountryLevel {
@@ -25,8 +26,9 @@ export interface StreakRecord {
   best: number
 }
 
+/** Version 2 (plan 13) has Selection keys for the Streaks; version 1 had Category keys. */
 interface StoredPractice {
-  version: 1
+  version: 2
   skills: Record<string, SkillProgress>
   streaks: Record<string, StreakRecord>
 }
@@ -42,10 +44,12 @@ export function skillKey(settings: QuizSettings): string {
   return flag ? `${settings.gameModeId}|${flag}` : settings.gameModeId
 }
 
-/** The Practice Set of practice settings: the Skill plus the Categories, e.g. `name-to-location|flag-only|europe`. */
+/**
+ * The Practice Set of practice settings: the Skill plus the Selection, e.g.
+ * `name-to-location|flag-only|europe` (see `selectionKey`).
+ */
 export function practiceSetKey(settings: QuizSettings): string {
-  const categories = [...settings.categoryIds].sort().join(',')
-  return `${skillKey(settings)}|${categories}${settings.usStates ? '|us-states' : ''}`
+  return `${skillKey(settings)}|${selectionKey(settings.selection)}`
 }
 
 export function loadSkillProgress(settings: QuizSettings): SkillProgress {
@@ -80,14 +84,37 @@ export function resetPracticeProgress(settings: QuizSettings, countryIds: readon
   save(stored)
 }
 
+const OLD_US_STATES = '|us-states'
+
+/**
+ * Version 1 to 2: the Streaks' Category keys become Selection keys, as the
+ * Leaderboard's do (see `selectionKeyFromCategories`): `<skill>|<categories>`,
+ * plus `|us-states` with "Individual states in USA". The Levels belong to the
+ * Skill, so they stay. Runs once: the result is saved as version 2 with the next Try.
+ */
+function moveCategoryKeys(streaks: Record<string, StreakRecord>): Record<string, StreakRecord> {
+  const moved: Record<string, StreakRecord> = {}
+  for (const [key, streak] of Object.entries(streaks)) {
+    const usStates = key.endsWith(OLD_US_STATES)
+    const rest = usStates ? key.slice(0, -OLD_US_STATES.length) : key
+    const split = rest.lastIndexOf('|')
+    const selection = selectionKeyFromCategories(rest.slice(split + 1), usStates)
+    moved[selection === null ? key : `${rest.slice(0, split)}|${selection}`] = streak
+  }
+  return moved
+}
+
 function load(): StoredPractice {
+  let stored: Partial<Omit<StoredPractice, 'version'>> & { version?: unknown } = {}
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as StoredPractice | null
-    if (stored?.version === 1 && stored.skills && stored.streaks) return stored
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') ?? {}
   } catch {
     // Unreadable: start over.
   }
-  return { version: 1, skills: {}, streaks: {} }
+  const { version, skills, streaks } = stored
+  if (skills && streaks && version === 2) return { version, skills, streaks }
+  if (skills && streaks && version === 1) return { version: 2, skills, streaks: moveCategoryKeys(streaks) }
+  return { version: 2, skills: {}, streaks: {} }
 }
 
 function save(stored: StoredPractice): void {
