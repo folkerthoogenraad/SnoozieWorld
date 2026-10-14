@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How plan 13 was made</title>
+    <!--
+      A log of how the plan and mockups for request 13 came about: Folkert's feedback per round, what
+      changed, and who decided what. The screenshots are in process/; the mockups and the plan are
+      linked. Uses the app's colours (src/style.css).
+    -->
+    <style>
+      :root {
+        --color-surface: #ffffff;
+        --color-surface-hover: #eef1f4;
+        --color-surface-active: #dfe4ea;
+        --color-surface-side: #f5f7f9;
+        --color-highlight-bg: #e7f0fb;
+        --color-text: #1b2430;
+        --color-text-muted: #5a6675;
+        --color-accent: #2f7dd1;
+        --color-text-correct: #2e7d32;
+        --color-navbar-bg: #16202b;
+
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.55;
+        color: var(--color-text);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--color-surface-side);
+      }
+
+      .page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 16px 64px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--color-accent);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 2rem;
+        line-height: 1.2;
+      }
+
+      h2 {
+        margin: 48px 0 12px;
+        font-size: 1.35rem;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      a {
+        color: var(--color-accent);
+      }
+
+      .lead {
+        max-width: 68ch;
+        color: var(--color-text-muted);
+        font-size: 1.05rem;
+      }
+
+      /* Numbers at a glance */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin: 24px 0 0;
+      }
+
+      .stat {
+        padding: 14px 16px;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 12px;
+        background: var(--color-surface);
+      }
+
+      .stat b {
+        display: block;
+        font-size: 1.6rem;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .stat span {
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+      }
+
+      /* The way of working, as steps */
+      .steps {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
+      }
+
+      .steps li {
+        position: relative;
+        padding: 12px 16px 12px 52px;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 12px;
+        background: var(--color-surface);
+        counter-increment: step;
+      }
+
+      .steps li::before {
+        content: counter(step);
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .steps b {
+        display: block;
+      }
+
+      .steps span {
+        color: var(--color-text-muted);
+        font-size: 0.92rem;
+      }
+
+      /* Timeline of rounds */
+      .timeline {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .timeline::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 7px;
+        width: 2px;
+        background: var(--color-surface-active);
+      }
+
+      .round {
+        position: relative;
+        padding: 0 0 28px 32px;
+      }
+
+      .round::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 0;
+        width: 16px;
+        height: 16px;
+        border: 3px solid var(--color-accent);
+        border-radius: 50%;
+        background: var(--color-surface-side);
+      }
+
+      .round-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 12px;
+        margin-bottom: 8px;
+      }
+
+      .round-head h3 {
+        margin: 0;
+      }
+
+      .time {
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .exchange {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .turn {
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 0.93rem;
+      }
+
+      .turn--folkert {
+        border: 1px solid var(--color-surface-active);
+        background: var(--color-surface);
+      }
+
+      .turn--claude {
+        background: var(--color-highlight-bg);
+      }
+
+      .turn h4 {
+        margin: 0 0 6px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .turn--folkert h4 {
+        color: var(--color-text);
+      }
+
+      .turn--claude h4 {
+        color: var(--color-accent);
+      }
+
+      .turn ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .turn li + li {
+        margin-top: 4px;
+      }
+
+      .turn p:last-child {
+        margin-bottom: 0;
+      }
+
+      q {
+        font-style: italic;
+      }
+
+      figure {
+        margin: 12px 0 0;
+      }
+
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 10px;
+      }
+
+      figcaption {
+        margin-top: 6px;
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+      }
+
+      /* Who caught what */
+      .columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .card {
+        padding: 16px 18px;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 12px;
+        background: var(--color-surface);
+      }
+
+      .card ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 0.93rem;
+      }
+
+      .card li + li {
+        margin-top: 6px;
+      }
+
+      /* Decisions */
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 12px;
+        background: var(--color-surface);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+      }
+
+      th,
+      td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--color-surface-active);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      th {
+        background: var(--color-surface-side);
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+
+      td:nth-child(2) {
+        white-space: nowrap;
+      }
+
+      .who {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
+      .who--folkert {
+        background: var(--color-surface-active);
+      }
+
+      .who--claude {
+        background: var(--color-highlight-bg);
+        color: var(--color-accent);
+      }
+
+      .who--both {
+        background: #e3f1e4;
+        color: var(--color-text-correct);
+      }
+
+      .links {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .links li {
+        padding: 12px 16px;
+        border: 1px solid var(--color-surface-active);
+        border-radius: 12px;
+        background: var(--color-surface);
+      }
+
+      .links span {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+      }
+
+      footer {
+        margin-top: 48px;
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+      }
+
+      @media (max-width: 640px) {
+        h1 {
+          font-size: 1.6rem;
+        }
+
+        .exchange,
+        .columns {
+          grid-template-columns: 1fr;
+        }
+
+        td:nth-child(2) {
+          white-space: normal;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <p class="eyebrow">SnoozieWorld · Request 13 · 14 October 2026</p>
+        <h1>From a six-line request to an agreed plan and mockup</h1>
+        <p class="lead">
+          A log of how the plan for request 13 (overseas territories as part of their continent) was made by Folkert
+          with Claude Code: what Folkert asked for in each round, what changed, and who decided what. No app code
+          was written yet; the result is a plan and a clickable mockup to build from.
+        </p>
+        <div class="stats">
+          <div class="stat"><b>~1 h 45</b><span>from the first question (12:18) to the committed plan (14:04)</span></div>
+          <div class="stat"><b>10</b><span>rounds of feedback from Folkert</span></div>
+          <div class="stat"><b>2</b><span>clickable mockups, in the app's own styling, on the real map data</span></div>
+          <div class="stat"><b>188</b><span>lines of plan, every decision in it agreed</span></div>
+        </div>
+      </header>
+
+      <section>
+        <h2>The way of working</h2>
+        <ol class="steps">
+          <li>
+            <b>Folkert writes the request in their own words</b>
+            <span>Six lines in <code>docs/requests/13-modifications-to-continents.md</code>, with examples
+              (Saint Lucia is in North America but Guadeloupe isn't). The repository's docs (domain language,
+              architecture) are the standing context.</span>
+          </li>
+          <li>
+            <b>Claude checks the request against the real data first</b>
+            <span>Before any design: every territory listed with the continent the map data gives it, to find the
+              problem cases.</span>
+          </li>
+          <li>
+            <b>A functional plan, then a mockup that looks like the app</b>
+            <span>The plan is a Markdown file in the repository. The mockup reuses the app's CSS and the real
+              country data, so counts, flags and names are true, and it can be clicked through.</span>
+          </li>
+          <li>
+            <b>Short feedback rounds</b>
+            <span>Folkert reacts to what they see; Claude changes the mockup and the plan together, checks every
+              change in a browser, and says where it disagrees.</span>
+          </li>
+          <li>
+            <b>Commit the agreed plan</b>
+            <span>Plan, mockups and this log are in the repository, next to the request, ready for building.</span>
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Round by round</h2>
+        <ol class="timeline">
+          <li class="round">
+            <div class="round-head"><h3>1 · Which sets make sense?</h3><span class="time">12:18</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <p><q>Can you help me make the sets make sense? Where are some other possible problem cases?</q></p>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Listed all 57 overseas territories with the continent the map data gives them.</li>
+                  <li>Found problems: Akrotiri and Dhekelia (on Cyprus) were in Asia while Cyprus is in Europe; the
+                    US Minor Outlying Islands were in North America though nearly all are in the Pacific; four
+                    territories sat in "Antarctica", which had no checkbox; uninhabited specks like Clipperton
+                    Island would end up in continent quizzes.</li>
+                  <li>Flagged side effects: saved leaderboards would change meaning.</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>2 · Let the player decide: plan and first mockup</h3><span class="time">12:34</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <p><q>I think we should make this more up to the user than we previously did.</q> Each continent gets
+                  its own settings (Mainland, Islands, Include overseas territories, US states), and Antarctica
+                  becomes a continent. Asked for a plan, then a mockup that looks like the app.</p>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Wrote the plan: Regions and options per continent, with counts.</li>
+                  <li>Designed the saved-score keys so that ticking just "Europe" stays the same quiz, so no
+                    leaderboard is lost.</li>
+                  <li>Built the first mockup and listed six open questions.</li>
+                </ul>
+              </div>
+            </div>
+            <figure>
+              <img src="process/round-1-grid.png" alt="The first mockup: the Start Screen with continents in a two-column grid, North America opened to show Mainland and Islands." loading="lazy" />
+              <figcaption>Mockup 1: the continents stay a grid on the Start Screen; an arrow opens a continent's regions.</figcaption>
+            </figure>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>3 · A page of its own</h3><span class="time">≈12:45</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li>Remove "All overseas territories": <q>I don't think anyone would want to do a quiz with only that.</q></li>
+                  <li>Move the selection to its own split-screen page, bigger continent cards, and the list of
+                    chosen countries on the right.</li>
+                  <li>Answered the open questions: a second US states checkbox, separate options for uninhabited
+                    islands, Balkans and Middle East as options, keep Antarctica. Asked: <q>Is there a general
+                    consensus?</q> on where far-off islands belong.</li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Continents have no flags (only Europe's EU flag and Antarctica's), so it drew small maps of
+                    each continent from the map data instead.</li>
+                  <li>Disagreed on the US states: two checkboxes for one thing, one always greyed out. Proposed a
+                    single checkbox.</li>
+                  <li>Answered honestly: there is no consensus; the UN's list and the map data disagree on exactly
+                    these islands.</li>
+                  <li>Defined "uninhabited" as population 0: ten places.</li>
+                </ul>
+              </div>
+            </div>
+            <figure>
+              <img src="process/round-2-selection-page.png" alt="The second mockup: a separate page with large continent cards and small maps on the left, the chosen countries with flags on the right." loading="lazy" />
+              <figcaption>Mockup 2: the Selection page, with continent cards on the left and the chosen countries on the right.</figcaption>
+            </figure>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>4 · Counts, labels, and a second variant</h3><span class="time">≈13:00</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li>US states single checkbox: <q>Yes, perfect, consistent.</q> Rule for far-off islands: the
+                    nearest continent.</li>
+                  <li>Wanted to quiz <em>only</em> the Balkans or the Middle East: <q>especially for practise that makes sense.</q></li>
+                  <li>Spotted that North America showed 23 unticked and 41 once ticked: <q>That is odd.</q> Counts
+                    only for what is chosen; unticking and ticking again should reset to the default.</li>
+                  <li>The label under a continent made the card jump; show "–" instead.</li>
+                  <li>Proposed a different design: tick continents on the left, customise them on the right. <q>Keep the current one too!</q></li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Made the Balkans and the Middle East regions of their own, on by default.</li>
+                  <li>Fixed counts, reset and the label in variant A.</li>
+                  <li>Built variant B as a second page on shared code, so both run on the same data and can be
+                    compared side by side.</li>
+                </ul>
+              </div>
+            </div>
+            <figure>
+              <img src="process/round-3-variant-a.png" alt="Variant A: continent cards that open to show their regions, each with a dash or a summary under the name." loading="lazy" />
+              <figcaption>Variant A after the fixes: counts only on chosen continents, and a "–" line so cards don't jump.</figcaption>
+            </figure>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>5 · Choosing variant B</h3><span class="time">≈13:20</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li><q>Option B is great, yeah, lets go for this.</q></li>
+                  <li>Balkans: add Romania and Moldova, leave out Slovenia and Greece.</li>
+                  <li>Noticed the list flickered on every click: fine in a mockup, but to fix when building.</li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Rewrote the plan around variant B; variant A kept for reference.</li>
+                  <li>Explained the flicker (the flags reload because the whole list is redrawn) and wrote the fix
+                    into the plan.</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>6 · Collapsing, order, and an exception</h3><span class="time">≈13:30</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li>Move US states below Islands: it's a long list that hides that Islands is on too.</li>
+                  <li>Collapse a section with an animation when switched off, with a manual way to open it again.</li>
+                  <li>South America should include its territories by default: <q>I know its strange and inconsistent, but I think it makes sense there.</q></li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Built the collapsing; the list now updates in place, which also removed the flicker from the mockup.</li>
+                  <li>Pointed out the cost of the South America exception: old South America scores were set
+                    without territories, so they need a one-time move, and the plan says how.</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>7 · "Was there a good UX reason?"</h3><span class="time">≈13:40</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li>Asked why sections had switches and continents checkboxes: <q>Was there a good UX reason to do this?</q></li>
+                  <li>Remove the "Presets (later)" placeholder: <q>I don't want to promise this if I'm not 100% sure I'm going to deliver it.</q></li>
+                  <li>Simplify the list's header; no instructions needed.</li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Admitted there wasn't one: both choose what is in the quiz, so by convention both should be
+                    checkboxes. Recommended changing it.</li>
+                  <li>Removed the presets placeholder; the header became "Countries 77".</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>8 · "I'm confused now"</h3><span class="time">≈13:45</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <p>French Guiana was crossed out in South America: <q>What is that about?</q></p>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <ul>
+                  <li>Reproduced it before answering: the Flag modifier was on "Flag only", and French Guiana flies the
+                    French flag, so it can't be asked.</li>
+                  <li>Acknowledged the real problem: the reason was invisible on this page, partly because of the
+                    header line it had just removed.</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>9 · Grey versus crossed out</h3><span class="time">≈13:50</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <ul>
+                  <li>Grey out what can't be asked; keep crossing out for the USA when it's replaced by its states,
+                    <q>where that makes way more sense.</q> A tooltip is enough.</li>
+                  <li>Checkboxes for the sections; a thin line between continents; the empty text simply
+                    <q>Choose one or more continents to play.</q></li>
+                </ul>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <p>Made the changes and checked them in a browser with "Flag only" on.</p>
+              </div>
+            </div>
+          </li>
+
+          <li class="round">
+            <div class="round-head"><h3>10 · Polish and commit</h3><span class="time">14:04</span></div>
+            <div class="exchange">
+              <div class="turn turn--folkert">
+                <h4>Folkert</h4>
+                <p>Indent the countries under their section heading, <q>just easier on the eyes</q>, then commit.</p>
+              </div>
+              <div class="turn turn--claude">
+                <h4>Claude</h4>
+                <p>Indented them to line up with the section name and committed the plan and mockups. It also committed
+                  another agent's uncommitted work (request 14) separately, after checking that it type-checks.</p>
+              </div>
+            </div>
+            <figure>
+              <img src="process/final-variant-b.png" alt="The final design: continent cards with checkboxes on the left; on the right, Countries 77, with Europe's sections, each with a checkbox, a count and an arrow, and their countries indented below." loading="lazy" />
+              <figcaption>The agreed design: tick continents on the left, tick or untick their sections on the right.</figcaption>
+            </figure>
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Who caught what</h2>
+        <div class="columns">
+          <div class="card">
+            <h3>Folkert</h3>
+            <ul>
+              <li>Product scope: drop the worldwide territories quiz; don't promise presets.</li>
+              <li>Learning value: quizzing only the Balkans or the Middle East.</li>
+              <li>Counts that changed meaning when ticked, and labels that made cards jump.</li>
+              <li>Inconsistent controls (switches next to checkboxes).</li>
+              <li>The flicker, and what crossing out should mean.</li>
+              <li>Domain choices: Balkans membership, the South America exception.</li>
+              <li>Layout details: US states hiding Islands, indenting for hierarchy.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Claude</h3>
+            <ul>
+              <li>Data problems: territories on the wrong continent, and the missing Antarctica checkbox.</li>
+              <li>Keeping existing leaderboards and practice progress working, and the one-time move the South
+                America default needs.</li>
+              <li>That continents have no flags, and an alternative from the map data.</li>
+              <li>A simpler US states control, and the rule for far-off islands.</li>
+              <li>Why French Guiana disappeared, and why that wasn't visible.</li>
+              <li>Its own bugs, found by checking each change in a browser before reporting it.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Decisions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Decision</th><th>From</th><th>Why</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Territories also count as part of their continent</td><td><span class="who who--folkert">Folkert</span></td><td>Leaving Guadeloupe out next to Saint Lucia felt arbitrary (the request).</td></tr>
+              <tr><td>Choosing what to quiz moves to its own page, with the chosen countries listed</td><td><span class="who who--folkert">Folkert</span></td><td>More room than a grid on the Start Screen; you see exactly what you will get.</td></tr>
+              <tr><td>Variant B: continents on the left, sections ticked on the right</td><td><span class="who who--folkert">Folkert</span></td><td>The list itself is the control; picked after comparing both mockups.</td></tr>
+              <tr><td>A far-off territory belongs to the nearest continent</td><td><span class="who who--both">Both</span></td><td>No consensus exists; for a map quiz you look near where it is. Claude laid out the options, Folkert chose.</td></tr>
+              <tr><td>Akrotiri, Dhekelia → Europe; US Minor Outlying Islands → Oceania; South Georgia → South America</td><td><span class="who who--claude">Claude</span></td><td>Found by checking the data; follows the nearest-continent rule.</td></tr>
+              <tr><td>One "US states" checkbox, not two</td><td><span class="who who--both">Both</span></td><td>Claude's counter-proposal to Folkert's idea; Folkert: "perfect, consistent".</td></tr>
+              <tr><td>Balkans and Middle East as regions of their own</td><td><span class="who who--folkert">Folkert</span></td><td>So they can be practised on their own.</td></tr>
+              <tr><td>Uninhabited islands as their own section</td><td><span class="who who--both">Both</span></td><td>Folkert asked for it; Claude defined it (population 0).</td></tr>
+              <tr><td>South America includes its territories by default</td><td><span class="who who--folkert">Folkert</span></td><td>They feel part of it; Claude added how old scores carry over.</td></tr>
+              <tr><td>Small continent maps instead of flags</td><td><span class="who who--claude">Claude</span></td><td>Only Europe and Antarctica have a flag.</td></tr>
+              <tr><td>Today's quizzes and leaderboards keep working</td><td><span class="who who--claude">Claude</span></td><td>A continent at its default keeps the same saved-score key as now.</td></tr>
+              <tr><td>Checkboxes everywhere; grey for "can't be asked", crossed out only for the replaced USA</td><td><span class="who who--folkert">Folkert</span></td><td>Consistency, and each look means one thing.</td></tr>
+              <tr><td>No presets in the design or plan</td><td><span class="who who--folkert">Folkert</span></td><td>Don't promise what may not be delivered.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>What came out of it</h2>
+        <ul class="links">
+          <li>
+            <a href="../../plans/13-modifications-to-continents.md">The plan</a>
+            <span>188 lines: concepts, every continent's sections with counts, the continent of each far-off territory,
+              how saved scores carry over, and the implementation steps.</span>
+          </li>
+          <li>
+            <a href="start-screen-variant-b.html">Mockup, variant B (agreed)</a>
+            <span>Clickable, on the real data. Open it from inside the repository so the flags load.</span>
+          </li>
+          <li>
+            <a href="start-screen.html">Mockup, variant A (for reference)</a>
+            <span>The design before variant B.</span>
+          </li>
+          <li>
+            <a href="../../requests/13-modifications-to-continents.md">The original request</a>
+            <span>Six lines, as Folkert wrote them; never edited by the agent.</span>
+          </li>
+        </ul>
+      </section>
+
+      <footer>
+        Times are from file timestamps and commits; times marked ≈ are estimates between them. Quotes are Folkert's own words.
+      </footer>
+    </main>
+  </body>
+</html>
