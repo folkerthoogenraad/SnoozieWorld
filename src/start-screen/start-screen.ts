@@ -104,7 +104,7 @@ export class StartScreen {
             <p class="start-screen__modifier-explanation" aria-live="polite"></p>
           </div>
 
-          <div class="screen__actions">
+          <div class="screen__actions start-screen__actions">
             <div class="start-screen__split">
               <button class="screen__button screen__button--secondary start-screen__split-main" value="explore">Explore</button>
               <button type="button" class="screen__button screen__button--secondary start-screen__split-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="start-screen-mode-menu" title="More modes" aria-label="More modes">

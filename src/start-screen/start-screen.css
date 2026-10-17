@@ -172,9 +172,13 @@
   font-weight: 600;
 }
 
+/* The menu of the split button is placed against the whole row, so it always fits in the panel. */
+.start-screen__actions {
+  position: relative;
+}
+
 /* The Explore split button: Explore, plus an arrow that opens a menu with Practice. */
 .start-screen__split {
-  position: relative;
   display: flex;
   gap: 1px;
 }
@@ -207,13 +211,13 @@
   transform: rotate(180deg);
 }
 
-/* Opens upwards, above the buttons. */
+/* Opens upwards, above the buttons, right-aligned with them (they are at the right of the panel). */
 .start-screen__mode-menu {
   position: absolute;
   bottom: calc(100% + 6px);
-  left: 0;
+  right: 0;
   z-index: 1;
-  width: min(300px, calc(100vw - 64px));
+  width: min(300px, 100%);
   padding: 4px;
   border: 1px solid var(--color-surface-active);
   border-radius: 10px;
