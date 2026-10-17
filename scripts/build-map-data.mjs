@@ -102,24 +102,34 @@ const CONTINENT_OVERRIDES = {
   UMI: 'Oceania', // all but Navassa lie in the Pacific
 }
 
-// The Regions of the Continents (plan 13). A Sovereign State not listed here is
-// on its Continent's Mainland; in Oceania the Region is Natural Earth's
-// subregion, and South America and Antarctica are one Region each. Island
-// countries lie entirely on islands without a land border to the mainland
-// (Brunei and East Timor share an island with a neighbour, so they count too).
-const ISLAND_COUNTRIES = [
-  'CYP', 'GBR', 'IRL', 'ISL', 'MLT', // Europe
-  'COM', 'CPV', 'MDG', 'MUS', 'STP', 'SYC', // Africa
-  'BRN', 'IDN', 'JPN', 'LKA', 'MDV', 'PHL', 'SGP', 'TLS', 'TWN', // Asia
-]
+// The Regions of the Continents (plans 13 and 15). In Europe a Sovereign State
+// not listed here is on the Mainland; in Africa, Asia and Oceania the Region
+// follows Natural Earth's subregion (the UN's), and South America and
+// Antarctica are one Region each. Island countries lie entirely on islands
+// without a land border to the mainland.
+const ISLAND_COUNTRIES = ['CYP', 'GBR', 'IRL', 'ISL', 'MLT']
 const BALKANS = ['ALB', 'BGR', 'BIH', 'HRV', 'KOS', 'MDA', 'MKD', 'MNE', 'ROU', 'SRB']
-// Bahrain is an island, but belongs here rather than under the islands.
-const MIDDLE_EAST = ['ARE', 'BHR', 'IRN', 'IRQ', 'ISR', 'JOR', 'KWT', 'LBN', 'OMN', 'PSX', 'QAT', 'SAU', 'SYR', 'TUR', 'YEM']
-const OCEANIA_REGIONS = {
-  'Australia and New Zealand': 'australia-nz',
-  Melanesia: 'melanesia',
-  Micronesia: 'micronesia',
-  Polynesia: 'polynesia',
+const SUBREGION_REGIONS = {
+  Africa: {
+    'Northern Africa': 'north',
+    'Western Africa': 'west',
+    'Middle Africa': 'central',
+    'Eastern Africa': 'east',
+    'Southern Africa': 'southern',
+  },
+  Asia: {
+    'Western Asia': 'middle-east-and-caucasus',
+    'Central Asia': 'central-and-south',
+    'Southern Asia': 'central-and-south',
+    'Eastern Asia': 'east-and-southeast',
+    'South-Eastern Asia': 'east-and-southeast',
+  },
+  Oceania: {
+    'Australia and New Zealand': 'australia-nz',
+    Melanesia: 'melanesia',
+    Micronesia: 'micronesia',
+    Polynesia: 'polynesia',
+  },
 }
 // The one Other Area that can be asked: it has a Flag, but no capital.
 const ASKABLE_OTHER_AREA = 'ATA'
@@ -170,10 +180,9 @@ function regionOf(id, p) {
   if (id === ASKABLE_OTHER_AREA) return 'antarctica'
   if (p.kind !== 'sovereign') return null
   if (BALKANS.includes(id)) return 'balkans'
-  if (MIDDLE_EAST.includes(id)) return 'middle-east'
+  // Undefined for an unknown subregion, so the build stops.
+  if (p.continent in SUBREGION_REGIONS) return SUBREGION_REGIONS[p.continent][p.subregion]
   switch (p.continent) {
-    case 'Oceania':
-      return OCEANIA_REGIONS[p.subregion]
     case 'South America':
       return 'south-america'
     case 'North America':

@@ -207,6 +207,10 @@ South America's default); `north-america` + `|us-states` becomes
 `north-america/us-states`. Keys with `overseas-territories` stay as they are, unreachable. The result is written back
 as version 2 on the next save, so the move runs once: afterwards `south-america` means the new default.
 
+Plan 15 replaced the Regions of Africa and Asia without a move: `africa` and `asia` (their defaults) still quiz the
+same Countries, and keys with an old Region of theirs (`asia/middle-east`, `africa/islands`, …) stay as they are,
+unreachable. Stored settings with such a Region get that Continent's default Sections (`normalizeSelection`).
+
 The Quiz Streaks (`snoozieworld.quizStreaks`) use the Leaderboard key too, but were not moved: a Quiz Streak from
 before plan 13 under a changed key just starts again at 0.
 
@@ -286,8 +290,9 @@ The script:
    shared topology gives exact shapes.
 3. Sets the properties the app uses: `name` (with `NAME_OVERRIDES`), `kind` (sovereign/territory/other, see
    `EXTRA_SOVEREIGN` and `OTHER_AREAS`), `continent` (with `CONTINENT_OVERRIDES`: an Overseas Territory belongs to
-   the nearest Continent, M49 decides a tie), `region` (plan 13: `ISLAND_COUNTRIES`, `BALKANS`, `MIDDLE_EAST`,
-   Natural Earth's subregions for Oceania and the Caribbean; null for Overseas Territories and Other Areas except
+   the nearest Continent, M49 decides a tie), `region` (plans 13 and 15: `ISLAND_COUNTRIES` and `BALKANS` in Europe,
+   `SUBREGION_REGIONS` (Natural Earth's subregions, the UN's) for Africa, Asia and Oceania, the Caribbean as North
+   America's Islands; null for Overseas Territories and Other Areas except
    Antarctica), `isoA2`, `labelPoint`, `area` (km², via d3-geo) and `distinctFlag`. The flag check compares flag-icons SVGs with their ids stripped,
    because identical flags differ only in their ids. US States are checked against their own Flags (all distinct),
    so run `npm run fetch:us-state-flags` first when those are missing.
@@ -299,8 +304,8 @@ The script:
    With the US states Section on, `quizCountries` asks them, and never the USA.
 5. Simplifies the shapes to ~30% of their points, but never simplifies tiny Countries. Writes TopoJSON
    (~1.7 MB, ~600 KB gzipped).
-6. Prints what each Continent can quiz per Region, territories and uninhabited islands (compare with the table in
-   plan 13).
+6. Prints what each Continent can quiz per Region, territories and uninhabited islands (compare with the tables in
+   plans 13 and 15).
 7. Draws the Continent Icons into `src/start-screen/continent-icons.json`: the finished topology simplified again
    (quantile 0.997), Mercator boxes per Continent (`ICON_BOXES`), Antarctica orthographic from below, 64 × 44 px.
    Points are rounded to half pixels, points on a straight line and rings under 1 px² dropped, and the paths written

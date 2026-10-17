@@ -103,7 +103,7 @@ A wrong Try also briefly flashes the clicked Country dark red.
 | **Country Shape** | The geometry of a Country, used to draw it on the Map. | `CountryShape` |
 | **Ocean** | All water on the Map: the area behind the Countries. | `.map__ocean` |
 | **Continent** | The continent of a Country: Africa, Asia, Europe, North America, South America, Oceania, Antarctica. Mostly Natural Earth's; an Overseas Territory belongs to the nearest one, see the build script for the overrides. Each is chosen as a whole on the Selection page, with its Sections. | `Country.continent`, `SelectableContinent` |
-| **Region** | A part of a Continent: *Mainland*, *Balkans* (Europe), *Middle East* (Asia), *Islands* (island countries; in North America the Caribbean), *US states*, Oceania's *Australia and New Zealand*, *Melanesia*, *Micronesia*, *Polynesia*, and *South America* and *Antarctica* as one Region each. Every Sovereign State, US State and Antarctica is in exactly one; Overseas Territories are in none (they have Sections of their own). | `Country.region` — set in `scripts/build-map-data.mjs` |
+| **Region** | A part of a Continent: *Mainland*, *Balkans* (Europe), *Islands* (Europe's island countries; in North America the Caribbean), *US states*, Africa's *North*, *West*, *Central*, *East*, *Southern* and Asia's *Middle East and Caucasus*, *Central and South*, *East and Southeast* (the UN's regions, plan 15), Oceania's *Australia and New Zealand*, *Melanesia*, *Micronesia*, *Polynesia*, and *South America* and *Antarctica* as one Region each. Every Sovereign State, US State and Antarctica is in exactly one; Overseas Territories are in none (they have Sections of their own). | `Country.region` — set in `scripts/build-map-data.mjs` |
 | **Uninhabited** | An Overseas Territory with population 0 in Country Info, e.g. Clipperton Island, Jan Mayen. Pitcairn (35 people), Cocos and Tokelau are inhabited. Quizzed in its Continent's *Uninhabited islands* Section. | `isUninhabited` — `src/quiz/selection.ts` |
 | **Capital** | The capital of a Country, from Country Info. Some have none (uninhabited islands, Other Areas, Tokelau, Dhekelia, Western Sahara). A capital name used twice (Kingston: Jamaica and Norfolk Island) is asked with its Continent: "Kingston (Oceania)". | `CountryInfo.capital`, `capitalPrompt` |
 | **Flag** | The flag of a Country, looked up by `Country.isoA2` (a US State's by its id). Some Other Areas have none. | `flagUrl` — `src/country/flag.ts` |
@@ -162,8 +162,13 @@ A wrong Try also briefly flashes the clicked Country dark red.
 - **Territories are off by default, except in South America** (plan 13): French Guiana and the Falkland Islands feel
   part of it. So South America's old Leaderboard (without them) moved to *South America (without territories)*.
 - **The Balkans** (plan 13): Albania, Bosnia and Herzegovina, Bulgaria, Croatia, Kosovo, Moldova, Montenegro, North
-  Macedonia, Romania, Serbia; Slovenia and Greece are Mainland. **The Middle East**: Bahrain, Iran, Iraq, Israel,
-  Jordan, Kuwait, Lebanon, Oman, Palestine, Qatar, Saudi Arabia, Syria, Turkey, United Arab Emirates, Yemen (not
-  Egypt, Cyprus or the Caucasus). An island country lies entirely on islands without a land border to the mainland;
-  Brunei and East Timor count, Malaysia, Equatorial Guinea and Denmark don't.
+  Macedonia, Romania, Serbia; Slovenia and Greece are Mainland. An island country lies entirely on islands without a
+  land border to the mainland; Denmark doesn't count.
+- **Africa and Asia follow the UN's regions (M49)** (plan 15), as Natural Earth's subregions give them, so the UN
+  decides the doubtful cases: Iran is Central and South Asia, Sudan North Africa, Zambia and Mozambique East Africa.
+  Asia's Regions pair up the UN's: *Middle East and Caucasus* is Western Asia, *Central and South* is Central and
+  Southern Asia, *East and Southeast* is Eastern and South-Eastern Asia. Island countries are in the Region they lie
+  in (Japan in East and Southeast, Madagascar in East); there are no Islands in Africa and Asia any more. Western
+  Sahara is a Sovereign State here, so North Africa has 7 rather than the UN's 6. Their old Leaderboards for a part
+  of the Continent (*Asia (Middle East)*, *Africa (without the islands)*) stay stored but can't be shown.
 - **No Presets and no ticking single Countries** on the Selection page (plan 13), for now.

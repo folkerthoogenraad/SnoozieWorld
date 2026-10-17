@@ -105,10 +105,24 @@ const US_STATES: Section = {
   includes: (country) => country.kind === 'state',
 }
 
-/** The Continents and their Regions (plan 13); the Regions of the Countries are set in scripts/build-map-data.mjs. */
+/**
+ * The Continents and their Regions (plans 13 and 15); the Regions of the
+ * Countries are set in scripts/build-map-data.mjs. Asia and Africa follow the
+ * UN's regions, west to east and north to south.
+ */
 export const CONTINENTS: readonly SelectableContinent[] = [
-  continent('Africa', [MAINLAND, ISLANDS]),
-  continent('Asia', [MAINLAND, ['middle-east', 'Middle East', 'the Middle East'], ISLANDS]),
+  continent('Africa', [
+    ['north', 'North', 'North Africa'],
+    ['west', 'West', 'West Africa'],
+    ['central', 'Central', 'Central Africa'],
+    ['east', 'East', 'East Africa'],
+    ['southern', 'Southern', 'Southern Africa'],
+  ]),
+  continent('Asia', [
+    ['middle-east-and-caucasus', 'Middle East and Caucasus', 'the Middle East and Caucasus'],
+    ['central-and-south', 'Central and South', 'Central and South Asia'],
+    ['east-and-southeast', 'East and Southeast', 'East and Southeast Asia'],
+  ]),
   continent('Europe', [MAINLAND, ['balkans', 'Balkans', 'the Balkans'], ISLANDS]),
   continent('North America', [MAINLAND, ISLANDS], { extra: [US_STATES] }),
   // French Guiana and the Falkland Islands feel part of it.
@@ -226,10 +240,21 @@ export function selectionKey(selection: Selection): string {
   return parts.sort().join(',')
 }
 
+/**
+ * The Region keys of Africa and Asia from before plan 15. Their new Regions
+ * divide the Continent differently, so a stored Selection with any of them
+ * gets the Continent's default Sections instead.
+ */
+const REPLACED_REGION_KEYS = ['africa/mainland', 'africa/islands', 'asia/mainland', 'asia/middle-east', 'asia/islands']
+
 /** The known Section keys of a stored Selection, without duplicates, in the order of CONTINENTS. */
 export function normalizeSelection(stored: readonly unknown[]): string[] {
+  const keys = [...stored]
+  for (const key of REPLACED_REGION_KEYS.filter((key) => stored.includes(key))) {
+    keys.push(...defaultSelection(CONTINENTS.find((continent) => key.startsWith(`${continent.id}/`))!))
+  }
   return CONTINENTS.flatMap((continent) =>
-    continent.sections.map((section) => sectionKey(continent, section)).filter((key) => stored.includes(key)),
+    continent.sections.map((section) => sectionKey(continent, section)).filter((key) => keys.includes(key)),
   )
 }
 
