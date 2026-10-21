@@ -32,3 +32,10 @@
 .sound-toggle__speaker {
   fill: currentColor;
 }
+
+/* Phones and tablets: the Settings Menu holds the Sound Toggle. */
+@media (max-width: 960px) {
+  .sound-toggle {
+    display: none;
+  }
+}

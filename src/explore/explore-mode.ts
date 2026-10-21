@@ -1,7 +1,9 @@
 import { createCountryInfoButton } from '../country-info/country-info-button.ts'
 import type { CountryInfoDialog } from '../country-info/country-info-dialog.ts'
 import { createCountryLabel } from '../country/country-label.ts'
+import { countryName } from '../country/country-names.ts'
 import type { Country } from '../country/country.ts'
+import { onLanguageChange } from '../language/language.ts'
 import type { WorldMap } from '../map/world-map.ts'
 import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
@@ -29,6 +31,7 @@ export class ExploreMode implements Mode {
     this.stopListening = [
       this.map.onCountryHover((country) => this.map.setHighlightedCountry(country?.id ?? null)),
       this.map.onCountryClick((country) => this.explore(country)),
+      onLanguageChange(() => this.showExploredCountry()),
     ]
   }
 
@@ -43,9 +46,15 @@ export class ExploreMode implements Mode {
     if (country === this.exploredCountry) return
     this.exploredCountry = country
     this.map.setSelectedCountry(country?.id ?? null)
+    this.showExploredCountry()
+  }
+
+  /** The Explored Country's Flag and name in the Navbar, in the current Language. */
+  private showExploredCountry(): void {
+    const country = this.exploredCountry
     this.navbar.setStatus(
       country
-        ? createCountryInfoButton(createCountryLabel(country), `More about ${country.name}`, () =>
+        ? createCountryInfoButton(createCountryLabel(country), `More about ${countryName(country)}`, () =>
             this.countryInfo.open(country),
           )
         : null,

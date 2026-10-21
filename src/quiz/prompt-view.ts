@@ -1,6 +1,6 @@
 import { createCountryInfoButton } from '../country-info/country-info-button.ts'
-import { capitalPrompt } from '../country/country-info.ts'
 import { createCountryLabel, createFlag } from '../country/country-label.ts'
+import { capitalPrompt, countryName } from '../country/country-names.ts'
 import type { Country } from '../country/country.ts'
 import type { QuizSettings } from './quiz-settings.ts'
 import './quiz-status.css'
@@ -16,6 +16,7 @@ export class PromptView {
   private readonly settings: QuizSettings
   private readonly onPromptClick: ((country: Country) => void) | null
   private shownKey: string | null = null
+  private shownPrompt: Country | null = null
 
   constructor(settings: QuizSettings, onPromptClick: ((country: Country) => void) | null = null) {
     this.settings = settings
@@ -31,18 +32,20 @@ export class PromptView {
   show(prompt: Country | null, key = prompt?.id ?? null): void {
     if (key === this.shownKey) return
     this.shownKey = key
+    this.shownPrompt = prompt
     if (!prompt) {
       this.element.textContent = 'Finished!'
       return
     }
-    const content = this.createContent(prompt)
-    const onClick = this.onPromptClick
-    this.element.replaceChildren(
-      onClick ? createCountryInfoButton(content, 'More about this country', () => onClick(prompt)) : content,
-    )
+    this.render(prompt)
     // A shake from the previous Prompt's wrong Try would override the fade-in.
     this.element.classList.remove('quiz-status__prompt--shake')
     restartAnimation(this.element, 'quiz-status__prompt--new')
+  }
+
+  /** Shows the Prompt again, without fading in: its name or capital in the new Language. */
+  refreshNames(): void {
+    if (this.shownPrompt) this.render(this.shownPrompt)
   }
 
   /** A wrong Try. */
@@ -63,11 +66,19 @@ export class PromptView {
     this.element.append(notice)
   }
 
+  private render(prompt: Country): void {
+    const content = this.createContent(prompt)
+    const onClick = this.onPromptClick
+    this.element.replaceChildren(
+      onClick ? createCountryInfoButton(content, 'More about this country', () => onClick(prompt)) : content,
+    )
+  }
+
   private createContent(country: Country): HTMLElement {
     if (this.settings.gameModeId === 'capital-to-location') {
       const capital = document.createElement('span')
       capital.className = 'quiz-status__capital'
-      capital.textContent = capitalPrompt(country) ?? country.name
+      capital.textContent = capitalPrompt(country) ?? countryName(country)
       return capital
     }
     switch (this.settings.modifiers.flag) {

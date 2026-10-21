@@ -1,5 +1,6 @@
 import { countryInfo, formatArea, formatPopulation, type FunFact } from '../country/country-info.ts'
 import { createFlag } from '../country/country-label.ts'
+import { capitalName, countryName } from '../country/country-names.ts'
 import type { Country } from '../country/country.ts'
 import '../screen/screen.css'
 import './country-info-dialog.css'
@@ -10,7 +11,9 @@ const EXTERNAL_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" s
 /**
  * Country Info: a small modal with facts about one Country: its capital,
  * population, area, the Country an Overseas Territory or US State belongs to, and
- * a random Fun Fact. The dice shows another one (when there are more); the
+ * a random Fun Fact. Names are in the current Language; in any other than
+ * English, the English name and capital are shown below them in small grey
+ * text. The dice shows another one (when there are more); the
  * source button opens the page that confirms it in a new tab. Opened by clicking the Explored Country in the Navbar, or the
  * Prompt during a Quiz Run with Hints on. Closes
  * with its button, Escape, or a click outside it.
@@ -46,6 +49,7 @@ export class CountryInfoDialog {
         <div class="country-info__flag"></div>
         <div>
           <h2 class="country-info__name"></h2>
+          <p class="country-info__english-name" lang="en" hidden></p>
           <p class="country-info__kind"></p>
         </div>
       </header>
@@ -64,25 +68,31 @@ export class CountryInfoDialog {
     `
     const part = (name: string) => form.querySelector<HTMLElement>(`.country-info__${name}`)!
     part('flag').append(createFlag(country, 'large'))
-    part('name').textContent = country.name
+    const name = countryName(country)
+    part('name').textContent = name
+    const englishName = englishVersion(name, countryName(country, 'en'))
+    part('english-name').textContent = englishName ? `In English: ${englishName}` : ''
+    part('english-name').hidden = !englishName
+    const parentName = parent ? countryName(parent) : 'another country'
     part('kind').textContent =
       country.kind === 'territory'
-        ? `Overseas territory of ${parent?.name ?? 'another country'}`
+        ? `Overseas territory of ${parentName}`
         : country.kind === 'sovereign'
           ? `Sovereign state in ${country.continent}`
           : country.kind === 'state'
-            ? `${country.id === 'US-DC' ? 'Federal district' : 'State'} of ${parent?.name ?? 'another country'}`
+            ? `${country.id === 'US-DC' ? 'Federal district' : 'State'} of ${parentName}`
             : 'Not a country'
 
     const facts = part('facts')
-    const addFact = (label: string, value: string, note?: string) => {
+    const addFact = (label: string, value: string, ...notes: (string | undefined)[]) => {
       const row = document.createElement('div')
       row.className = 'country-info__fact'
       const term = document.createElement('dt')
       term.textContent = label
       const description = document.createElement('dd')
       description.textContent = value
-      if (note) {
+      for (const note of notes) {
+        if (!note) continue
         const small = document.createElement('small')
         small.className = 'country-info__note'
         small.textContent = note
@@ -92,7 +102,9 @@ export class CountryInfoDialog {
       facts.append(row)
     }
     if (info) {
-      addFact('Capital', info.capital ?? 'None', info.capitalNote)
+      const capital = capitalName(country)
+      const englishCapital = capital && englishVersion(capital, info.capital)
+      addFact('Capital', capital ?? 'None', englishCapital ? `In English: ${englishCapital}` : undefined, info.capitalNote)
       addFact('Population', formatPopulation(info.population))
       addFact('Area', formatArea(info.area))
       if (info.funFacts.length) this.showFunFacts(form, info.funFacts)
@@ -129,6 +141,11 @@ export class CountryInfoDialog {
     })
     show()
   }
+}
+
+/** The English name when it differs from the one shown (so never in English); null otherwise. */
+function englishVersion(shown: string, english: string | null): string | null {
+  return english && english !== shown ? english : null
 }
 
 function hostname(url: string): string {

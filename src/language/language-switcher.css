@@ -1,0 +1,65 @@
+.language-switcher {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 4px 0 6px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.language-switcher:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.language-switcher:has(:focus-visible) {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.language-switcher__chevron {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.8;
+}
+
+/* Invisible, but it takes the clicks and the keyboard, and opens the native list. */
+.language-switcher__select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The Language Flag (feedback 13): round and much smaller than a Country's Flag, so it reads as a setting.
+   Also used in the Settings Menu. */
+.language-flag {
+  flex: none;
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3);
+}
+
+.language-switcher .language-flag {
+  margin-right: 6px;
+}
+
+/* Phones and tablets: the Settings Menu holds the Language. */
+@media (max-width: 960px) {
+  .language-switcher {
+    display: none;
+  }
+}

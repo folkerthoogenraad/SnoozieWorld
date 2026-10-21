@@ -1,5 +1,6 @@
 import type { CountryInfoDialog } from '../country-info/country-info-dialog.ts'
 import type { Country } from '../country/country.ts'
+import { onLanguageChange } from '../language/language.ts'
 import type { MapPoint, WorldMap } from '../map/world-map.ts'
 import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
@@ -15,7 +16,8 @@ import { PracticeStatus } from './practice-status.ts'
 /**
  * Practice Mode: plays a Practice Run on the Map, to learn rather than to
  * score. Countries outside the Practice Set are Excluded, and the Navbar shows
- * the Streak and the Prompt. Answers work as in Quiz Mode (see AnswerFeedback),
+ * the Streak and the Prompt. Answers work as in Quiz Mode (see AnswerFeedback;
+ * a click within a few pixels of the Prompt counts for it too),
  * but the Map keeps no results: a found Prompt shows its colour briefly, a
  * Missed one until it is Confirmed, and then it is land again, so every
  * Prompt starts from a clean Map.
@@ -72,9 +74,14 @@ export class PracticeMode implements Mode {
         this.map.setHighlightedCountry(country && this.run.includes(country) ? country.id : null),
       ),
       this.map.onCountryClick((country, point) => this.answer(country, point)),
+      onLanguageChange(() => {
+        this.status.refreshNames()
+        this.feedback.refreshNames()
+      }),
     ]
     this.navbar.setStatus(this.status.element)
     this.status.update(this.run)
+    this.map.setInstantTapCountry(this.run.prompt.id)
   }
 
   stop(): void {
@@ -83,12 +90,15 @@ export class PracticeMode implements Mode {
     this.fadingResult.clear()
     this.map.fadeOutCountryStates()
     this.map.setHighlightedCountry(null)
+    this.map.setInstantTapCountry(null)
     this.map.setStatesShown(false)
     this.feedback.clear()
     this.navbar.setStatus(null)
   }
 
-  private answer(country: Country | null, point: MapPoint): void {
+  private answer(clicked: Country | null, point: MapPoint): void {
+    // A click within a few pixels of the Prompt counts for it (feedback 13).
+    const country = this.map.isNearCountry(this.run.prompt.id, point, clicked) ? this.run.prompt : clicked
     // Clicks on the Ocean or on Excluded Countries are not Answers.
     if (!country || !this.run.includes(country)) return
 
@@ -103,6 +113,7 @@ export class PracticeMode implements Mode {
     }
     if (this.run.reward) this.sounds.play(this.run.reward)
     this.status.update(this.run)
+    this.map.setInstantTapCountry(this.run.prompt.id)
     this.status.animate(outcome, this.run)
     savePracticeProgress(this.settings, this.run.skill, this.run.streakRecord)
   }

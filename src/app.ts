@@ -4,6 +4,7 @@ import { ExploreMode } from './explore/explore-mode.ts'
 import { addToLeaderboard, type LeaderboardEntry } from './leaderboard/leaderboard.ts'
 import { WorldMap } from './map/world-map.ts'
 import type { Mode } from './mode.ts'
+import { createLanguageSwitcher } from './language/language-switcher.ts'
 import { Navbar } from './navbar/navbar.ts'
 import { PauseScreen } from './pause-screen/pause-screen.ts'
 import { PracticeMode } from './practice/practice-mode.ts'
@@ -17,6 +18,7 @@ import { clearQuizSession, hasQuizSession, loadQuizSession } from './quiz/quiz-s
 import { activeModifiers, practiceSettings, quizCountries, quizRules, type QuizSettings } from './quiz/quiz-settings.ts'
 import { SoundPlayer } from './sound/sound-player.ts'
 import { createSoundToggle } from './sound/sound-toggle.ts'
+import { createSettingsMenu } from './settings-menu/settings-menu.ts'
 import { StartScreen } from './start-screen/start-screen.ts'
 
 // Pause between the last Answer and the End Screen, so the player sees the final colouring.
@@ -36,7 +38,8 @@ export class App {
   private readonly sounds = new SoundPlayer()
   private readonly navbar = new Navbar({
     onTitleClick: () => this.openMenu(),
-    controls: [createSoundToggle(this.sounds)],
+    // The Settings Menu replaces the other two on phones and tablets.
+    controls: [createLanguageSwitcher(), createSoundToggle(this.sounds), createSettingsMenu(this.sounds)],
   })
   private readonly countryInfo = new CountryInfoDialog()
   private readonly startScreen = new StartScreen({

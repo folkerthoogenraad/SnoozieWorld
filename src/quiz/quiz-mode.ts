@@ -1,5 +1,6 @@
 import type { CountryInfoDialog } from '../country-info/country-info-dialog.ts'
 import type { Country } from '../country/country.ts'
+import { onLanguageChange } from '../language/language.ts'
 import type { MapPoint, WorldMap } from '../map/world-map.ts'
 import type { Mode } from '../mode.ts'
 import type { Navbar } from '../navbar/navbar.ts'
@@ -16,7 +17,10 @@ import { Stopwatch } from './stopwatch.ts'
 
 /**
  * Plays a Quiz Run on the Map. Countries outside the Quiz Set are Excluded,
- * and the Navbar shows the Quiz Progress and Prompt. Clicking a Country answers:
+ * and the Navbar shows the Quiz Progress and Prompt. Clicking a Country answers
+ * (a click within a few pixels of the Prompt counts for the Prompt; a click on
+ * a Country already asked doesn't count, unless the Results Modifier is on
+ * Hidden, where those look like land; feedback 13):
  * - right on the first Try: the Country turns Correct (white);
  * - right on the second Try: Half Correct (yellow);
  * - wrong: the clicked Country flashes. After the last wrong Try the Prompt
@@ -115,12 +119,16 @@ export class QuizMode implements Mode {
     }
     this.stopListening = [
       this.map.onCountryHover((country) =>
-        this.map.setHighlightedCountry(country && this.run.includes(country) ? country.id : null),
+        this.map.setHighlightedCountry(country && this.isClickable(country) ? country.id : null),
       ),
       this.map.onCountryClick((country, point) => this.answer(country, point)),
       listen(document, 'visibilitychange', () => this.onVisibilityChange()),
       // Also fires on reload, e.g. when Vite reloads the page after a code change.
       listen(window, 'pagehide', () => this.save()),
+      onLanguageChange(() => {
+        this.status.refreshNames()
+        this.feedback.refreshNames()
+      }),
     ]
     // Show the results of a restored Quiz Run. With Hidden only a Missed Prompt still to be Confirmed,
     // which is the only record of the current Prompt.
@@ -133,6 +141,7 @@ export class QuizMode implements Mode {
 
     this.navbar.setStatus(this.status.element)
     this.status.update(this.run)
+    this.map.setInstantTapCountry(this.run.prompt?.id ?? null)
     this.resume()
     this.save()
   }
@@ -144,14 +153,18 @@ export class QuizMode implements Mode {
     this.fadingResult.clear()
     this.map.fadeOutCountryStates()
     this.map.setHighlightedCountry(null)
+    this.map.setInstantTapCountry(null)
     this.map.setStatesShown(false)
     this.feedback.clear()
     this.navbar.setStatus(null)
   }
 
-  private answer(country: Country | null, point: MapPoint): void {
-    // Clicks on the Ocean or on Excluded Countries are not Answers.
-    if (!country || !this.run.includes(country) || this.run.finished) return
+  private answer(clicked: Country | null, point: MapPoint): void {
+    const prompt = this.run.prompt
+    if (!prompt) return
+    const country = this.map.isNearCountry(prompt.id, point, clicked) ? prompt : clicked
+    // Clicks on the Ocean, on Excluded Countries and on Countries already asked are not Answers.
+    if (!country || !this.isClickable(country)) return
 
     // The previous result colour goes first, so its timeout can't clear a newer state.
     this.fadingResult.clear()
@@ -165,6 +178,7 @@ export class QuizMode implements Mode {
     }
     if (this.run.reward) this.sounds.play(this.run.reward)
     this.status.update(this.run)
+    this.map.setInstantTapCountry(this.run.prompt?.id ?? null)
     this.status.animate(outcome, this.run)
     if (outcome.kind === 'try-again' || outcome.kind === 'missed') saveQuizStreak(this.settings, 0)
     if (this.run.finished) {
@@ -174,6 +188,16 @@ export class QuizMode implements Mode {
     } else {
       this.save()
     }
+  }
+
+  /**
+   * In the Quiz Set and not asked yet, or the Missed Prompt waiting to be
+   * Confirmed. With Hidden, Countries already asked look like land, so they
+   * stay clickable.
+   */
+  private isClickable(country: Country): boolean {
+    if (!this.run.includes(country)) return false
+    return this.resultsHidden || country.id === this.run.prompt?.id || !this.run.resultOf(country)
   }
 
   /** Country Info for the Prompt (Hints on). The Session Time stops while it is open. */

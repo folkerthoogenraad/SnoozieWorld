@@ -58,32 +58,29 @@
   margin-right: -8px;
 }
 
-/* Phones and tablets: the Quiz Progress doesn't fit next to the title and a full-width Prompt. */
+/* Phones and tablets: only the globe and the Settings Menu's gear, each centred on the Navbar's height, with the
+   Status centred between them. During a Quiz Run the Status has three lines (see quiz-status.css). */
 @media (max-width: 960px) {
   .navbar {
-    grid-template-columns: auto 1fr auto;
-    gap: 10px;
+    grid-template-columns: 40px 1fr 40px;
+    gap: 8px;
     height: auto;
     min-height: var(--navbar-height);
-    padding: 8px 16px;
+    padding: 8px 12px;
   }
 
   .navbar__title {
-    padding: 6px;
-    margin-left: -6px;
+    justify-self: center;
+    padding: 8px;
+    margin-left: 0;
   }
 
-  /* Only the globe, leaving room for the Prompt. */
   .navbar__title-text {
     display: none;
   }
 
-  .navbar__status {
-    justify-content: flex-end;
-  }
-
   .navbar__controls {
-    align-self: start;
-    margin-right: -6px;
+    justify-self: center;
+    margin-right: 0;
   }
 }

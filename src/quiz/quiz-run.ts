@@ -199,6 +199,11 @@ export class QuizRun {
     return this.quizSetIds.has(country.id)
   }
 
+  /** The Prompt Result of a Country already asked, or null. */
+  resultOf(country: Country): PromptResult | null {
+    return this.records.find((record) => record.country.id === country.id)?.result ?? null
+  }
+
   /** Handles a click on a Country of the Quiz Set. */
   answer(country: Country): AnswerOutcome {
     const prompt = this.prompt

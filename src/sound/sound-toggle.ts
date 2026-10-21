@@ -1,8 +1,8 @@
 import type { SoundPlayer } from './sound-player.ts'
 import './sound-toggle.css'
 
-const SOUND_ON_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="sound-toggle__speaker" d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" /></svg>`
-const SOUND_OFF_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="sound-toggle__speaker" d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" /></svg>`
+export const SOUND_ON_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="sound-toggle__speaker" d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" /></svg>`
+export const SOUND_OFF_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="sound-toggle__speaker" d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" /></svg>`
 
 /** The Sound Toggle: a button in the top-right corner of the Navbar that mutes and unmutes Sound Effects. */
 export function createSoundToggle(sounds: SoundPlayer): HTMLButtonElement {

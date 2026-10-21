@@ -15,6 +15,11 @@ src/
   country/country-label.ts  Flag and Country Label elements
   country/country-info.ts   Country Info lookup (capital, population, area, fun fact) and formatting
   country/country-info.json Country Info data, hand-maintained (see below)
+  country/country-names.ts  Country and capital names in the current Language; the capital as asked in a Prompt
+  country/country-names/    translated names per Language (nl.json), hand-maintained (see Languages)
+  language/language.ts      the current Language (localStorage) and its change listeners
+  language/language-switcher.ts  Language Switcher in the Navbar; the Language Flag's styles
+  settings-menu/            Settings Menu (phones and tablets: Language and Sound Effects behind a gear)
   country-info/             Country Info dialog, and the Navbar button (ⓘ) that opens it
   explore/explore-mode.ts   Explore Mode
   practice/practice-run.ts  Practice Run: spaced repetition (Levels), Streak (no DOM)
@@ -45,7 +50,8 @@ src/
   sound/sound-toggle.ts     Sound Toggle button
   screen/screen.css         two-column modal layout and buttons, shared by Start and End Screen
   map/world-map.ts          WorldMap (the Map), incl. world repetition, Tiny Country Markers, Capital Dots,
-                            Country States, Map Notice and Hint
+                            Country States, Map Notice, Hint and Near Misses
+  map/touch-taps.ts         TouchTaps: taps, double taps and double-tap-and-drag zoom on a touch screen
   navbar/navbar.ts          Navbar
   start-screen/start-screen.ts    StartScreen (native <dialog>) with its two pages
   start-screen/selection-page.ts  Selection page (the second page of the Start Screen)
@@ -64,9 +70,19 @@ vite.config.ts              dev/preview servers listen on the LAN (for testing o
 `stop()` must undo everything its `start()` did (listeners, Country States, Navbar Status). Modes drive the Map
 through its small API; the Map knows nothing about Modes:
 
-- `onCountryHover(listener)`: mouse/pen moves onto a Country (path or marker), or off it (`null`). Touch has no hover.
+- `onCountryHover(listener)`: mouse/pen moves onto a Country (path or marker), or off it (`null`). Touch has no hover;
+  instead the Country under a finger is hovered until its tap counts, or the finger pans.
 - `onCountryClick(listener)`: click or tap on a Country, or the Ocean (`null`), with the point clicked (px in the
-  Map element). Not fired after a pan.
+  Map element). Not fired after a pan. Taps come from `TouchTaps` (feedback 13), not from the browser's `click`: a
+  tap fires 250 ms after the finger goes up, unless a second tap makes it a double tap (zoom ×2), or the second tap
+  is held and dragged (zoom by `exp(-dy · 0.007)`, anchored where it went down). A tap on the Country set with
+  `setInstantTapCountry(id)` (Quiz and Practice Mode: the Prompt), or a Near Miss of it, fires as the finger goes up;
+  a second tap still zooms. Pointer events arrive before the
+  touch events d3-zoom listens to, so its filter ignores the `touchstart` of a second tap (`TouchTaps.claimed`);
+  `tapDistance(0)` turns off d3's own double-tap zoom. Mouse double-click zoom is d3's.
+- `isNearCountry(id, point, clicked)`: the Near Miss test. Checks `isPointInFill` on the Country's path at the point
+  and 16 points around it (at the full and half distance), in world units on copy 0, plus the distance to its Tiny
+  Country Marker. The distance depends on the input of the last press (`lastPointerType`).
 - `setHighlightedCountry(id | null)`, `setSelectedCountry(id | null)`
 - `setCountryState(id, 'excluded' | 'correct' | 'half-correct' | 'missed' | null)`, `clearCountryStates()`
 - `flashWrong(id)`: one-off CSS animation; `setPulsingCountry(id | null)`: endless animation until cleared.
@@ -141,7 +157,9 @@ There is no Quiz Session, Leaderboard or Pause Screen; the Navbar title opens th
 `SoundPlayer` synthesises each Sound Effect from a few oscillator tones (`EFFECTS` table: frequency, waveform,
 volume, length, optional low-pass filter). Each tone has a fast attack and an exponential fade, so there are no clicks.
 The `AudioContext` is created on the first sound, because browsers only allow audio after a user gesture. Mute state:
-`localStorage['snoozieworld.soundMuted']`. The Navbar takes `controls` (the Sound Toggle) for its top-right corner.
+`localStorage['snoozieworld.soundMuted']`. The Navbar takes `controls` (the Language Switcher and the Sound Toggle) for its top-right corner. Up to 960px wide,
+during a Quiz or Practice Run (two Navbar rows anyway), they stack with the Sound Toggle on top, so the Quiz Progress
+keeps its width.
 
 ## Modifiers
 
@@ -350,6 +368,37 @@ keeping it unsourced. Every Country should keep at least one sourced fact.
 When fixing an entry, keep these checks true: every Country id has an entry; `capital` and `capitalPoint` are both null or both set; the
 `capitalPoint` lies in or within a few km of the Country Shape (many coastal capitals sit just off the simplified
 coastline); capital names are unique except where `capitalPrompt` disambiguates them.
+
+## Languages
+
+Request 16: Country and capital names can be shown in another Language; nothing else is translated (not the static
+copy, Continent and Section names, Fun Facts or `capitalNote`). Languages: English (`en`, the default) and Dutch
+(`nl`). The Language lives in `localStorage['snoozieworld.language']`.
+
+Code never shows `country.name` or `CountryInfo.capital` directly: it uses `countryName(country)` and
+`capitalName(country)` (`src/country/country-names.ts`), which fall back to English when a translation is missing.
+Lists of Countries sort with `byCountryName` (in the Language's collation). `capitalPrompt` counts duplicate capitals
+per Language, so "Kingston (Oceania)" works in Dutch too.
+
+The Language Switcher is behind every modal, so the Language only changes while the Navbar and the Map are visible.
+On a change (`onLanguageChange`) the active Mode re-renders what it shows: the Explored Country, or the Prompt
+(`PromptView.refreshNames`, without its fade-in) and the Map Notice (`AnswerFeedback.refreshNames`; it hides the Hint,
+which would go in a moment anyway). The Selection page drops its Country items and builds them again, named and sorted
+in the new Language. Country Info, the End Screen and the Hint are built when they open, so they need nothing.
+
+Country Info shows the name in the Language as its heading; in any Language but English, the English name and capital
+follow in small grey text (*In English: Germany*), unless they are the same.
+
+**Translations** are `src/country/country-names/<language>.json`, keyed by Country id: `{ name, capital }`, with an entry
+for every Country and `capital` null exactly where Country Info has none. Dutch (`nl.json`) started from CLDR's Dutch
+region names (Node's `Intl.DisplayNames('nl', { type: 'region' })` on `isoA2`), reviewed by hand: CLDR's names for
+some codes are wrong for our Countries (Svalbard is *Spitsbergen*, not *Spitsbergen en Jan Mayen*; Clipperton and
+Ashmore have their parent's code), and the Congos, Myanmar and Palestine use the names common in Dutch news.
+Territories without a code, Other Areas and US States were named by hand; US States keep their English name except
+*Californië* and *Hawaï*, and Georgia needs no *(US state)* since the Country is *Georgië*. A capital keeps its
+English (usually local) name unless Dutch has its own: *Peking*, *Kopenhagen*, *Washington D.C.*, *Mexico-Stad*.
+Capitals were compiled with AI assistance, like the English ones. To add a Language: add it to `LANGUAGES` and
+`TRANSLATIONS`, and give it a JSON file with the same checks.
 
 ## Flags
 

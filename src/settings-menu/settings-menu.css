@@ -1,0 +1,167 @@
+/* Only on phones and tablets; wider screens have the Language Switcher and Sound Toggle. */
+.settings-menu {
+  position: relative;
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .settings-menu {
+    display: block;
+  }
+}
+
+.settings-menu__button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.settings-menu__button:hover,
+.settings-menu__button[aria-expanded='true'] {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.settings-menu__button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Catches the tap that closes the menu, so it doesn't reach the Map. */
+.settings-menu__backdrop {
+  position: fixed;
+  inset: 0;
+}
+
+.settings-menu__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 220px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  font-size: 0.95rem;
+}
+
+.settings-menu__backdrop[hidden],
+.settings-menu__list[hidden] {
+  display: none;
+}
+
+.settings-menu__heading {
+  padding: 6px 10px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.settings-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-menu__item:hover,
+.settings-menu__item:focus-visible {
+  background: var(--color-surface-hover);
+  outline: none;
+}
+
+.settings-menu__item .language-flag {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15);
+}
+
+.settings-menu__check {
+  margin-left: auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-menu__item[aria-checked='false'] .settings-menu__check {
+  visibility: hidden;
+}
+
+.settings-menu__separator {
+  margin: 4px 6px;
+  border: none;
+  border-top: 1px solid var(--color-surface-active);
+}
+
+.settings-menu__sound-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-menu__sound-icon .sound-toggle__speaker {
+  fill: currentColor;
+}
+
+/* An on/off switch showing whether Sound Effects play. */
+.settings-menu__switch {
+  position: relative;
+  flex: none;
+  margin-left: auto;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: #c5ccd3;
+  transition: background 0.15s;
+}
+
+.settings-menu__switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s;
+}
+
+.settings-menu__item[aria-checked='true'] .settings-menu__switch {
+  background: var(--color-pill-correct);
+}
+
+.settings-menu__item[aria-checked='true'] .settings-menu__switch::after {
+  transform: translateX(16px);
+}

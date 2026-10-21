@@ -4,6 +4,7 @@ import 'd3-transition'
 import { zoom, zoomIdentity, type D3ZoomEvent, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
 import { countryInfo } from '../country/country-info.ts'
 import { toCountry, type Country, type CountryShape } from '../country/country.ts'
+import { TouchTaps } from './touch-taps.ts'
 import './world-map.css'
 
 // The world is projected once into "world units": WORLD_WIDTH wide, from
@@ -27,6 +28,16 @@ const MARKER_RADIUS = 5
 const CAPITAL_RADIUS = 2.5
 // Radius of the invisible clickable area around a marker; larger for fingers.
 const MARKER_HIT_RADIUS = matchMedia('(pointer: coarse)').matches ? 16 : 10
+// How close (px on screen) a click must be to a Country to count as near it (isNearCountry); larger for fingers.
+const NEAR_DISTANCE = { mouse: 3, touch: 10 }
+// A click on a Country smaller on screen than this many times NEAR_DISTANCE is never near another one.
+const NEAR_MIN_CLICKED_SIZE = 3
+
+// Touch: a double tap zooms in this much, animated like d3-zoom's double-click; holding the second tap and
+// dragging zooms by this factor per px (up: in, down: out).
+const DOUBLE_TAP_ZOOM = 2
+const DOUBLE_TAP_ZOOM_DURATION = 250
+const ZOOM_DRAG_SPEED = 0.007
 
 /** A Quiz-related look of a Country on the Map. */
 export type CountryState = 'excluded' | 'correct' | 'half-correct' | 'missed'
@@ -65,6 +76,8 @@ interface Marker {
   hit: SVGCircleElement
   /** Size of the Country in world units; the marker hides once size × zoom reaches MARKER_HIDE_SIZE. */
   size: number
+  /** In world units, on copy 0. */
+  centre: [number, number]
 }
 
 /** [[left, top], [right, bottom]] in world units. */
@@ -91,6 +104,11 @@ export class WorldMap {
   private readonly projection
   private readonly worldHeight: number
   private readonly zoomBehavior: ZoomBehavior<HTMLElement, unknown>
+  private readonly touchTaps: TouchTaps
+  /** A tap on this Country, or a Near Miss of it, counts without waiting for a double tap (setInstantTapCountry). */
+  private instantTapCountryId: string | null = null
+  /** The input of the last press on the Map: 'mouse', 'pen' or 'touch'. */
+  private lastPointerType = 'mouse'
   private transform: ZoomTransform | null = null
   private fitScale = 1
 
@@ -99,6 +117,8 @@ export class WorldMap {
   private countryElements = new Map<string, SVGElement[]>()
   private countryBounds = new Map<string, Bounds>()
   private markers: Marker[] = []
+  /** The Tiny Country Marker of each Country that has one (one of its copies: they only differ in position). */
+  private markerByCountry = new Map<string, Marker>()
   private capitalDots: SVGCircleElement[] = []
   /** The zoom the Capital Dots were last sized for; panning alone doesn't resize them. */
   private capitalDotsK = 0
@@ -145,7 +165,7 @@ export class WorldMap {
     select(this.element).call(this.zoomBehavior)
     new ResizeObserver(() => this.fitToScreen()).observe(this.element)
 
-    this.listenForPointing()
+    this.touchTaps = this.listenForPointing()
     this.setStatus('Loading map…')
   }
 
@@ -197,6 +217,10 @@ export class WorldMap {
       .filter((s) => s.properties.kind !== 'other' && s.properties.area < MARKER_MAX_AREA)
       .sort((a, b) => b.properties.area - a.properties.area)
     const markerSizes = new Map(tiny.map((shape) => [shape.id, Math.sqrt(path.area(shape))]))
+    const markerCentres = new Map<string, [number, number]>(
+      tiny.map((shape) => [shape.id, this.projection(shape.properties.labelPoint) ?? [0, 0]]),
+    )
+    const markerCentre = (shape: CountryShape) => markerCentres.get(shape.id)!
     const markers = document.createElementNS(SVG_NS, 'g')
     select(markers)
       .selectAll('g')
@@ -210,7 +234,7 @@ export class WorldMap {
       .attr('class', (d) => `map__marker${stateClass(d)}`)
       .attr('data-country-id', (d) => d.id)
       .each((d, i, nodes) => {
-        const [cx, cy] = this.projection(d.properties.labelPoint) ?? [0, 0]
+        const [cx, cy] = markerCentre(d)
         for (const circle of (nodes[i] as SVGGElement).querySelectorAll('circle')) {
           circle.setAttribute('cx', String(cx))
           circle.setAttribute('cy', String(cy))
@@ -241,7 +265,9 @@ export class WorldMap {
       dot: element.querySelector('.map__marker-dot')!,
       hit: element.querySelector('.map__marker-hit')!,
       size: markerSizes.get(element.dataset.countryId!)!,
+      centre: markerCentres.get(element.dataset.countryId!)!,
     }))
+    this.markerByCountry = new Map(this.markers.map((marker) => [marker.element.dataset.countryId!, marker]))
     this.capitalDots = [...this.capitalsLayer.querySelectorAll<SVGCircleElement>('circle')]
     this.capitalDotsK = 0
     this.updateMarkers()
@@ -257,11 +283,60 @@ export class WorldMap {
 
   /**
    * Called when a Country, or the Ocean (with null), is clicked or tapped, with
-   * the point clicked. Not called after a pan.
+   * the point clicked. Not called after a pan. A tap only counts once it is
+   * clear it isn't the first half of a double tap (see TouchTaps); the
+   * Country under the finger goes to onCountryHover meanwhile.
    */
   onCountryClick(listener: CountryClickListener): () => void {
     this.clickListeners.add(listener)
     return () => this.clickListeners.delete(listener)
+  }
+
+  /**
+   * True when `point` lies on the Country or within a few pixels of it on
+   * screen (NEAR_DISTANCE, more after a tap than after a click), so a click
+   * just beside a Country (on its neighbour, or the Ocean) can still count for
+   * it (feedback 13). Also near its Tiny Country Marker while that is shown.
+   * Never when the click hit another Country that is small on screen, such as
+   * San Marino inside Italy: the player can only have meant that one.
+   */
+  isNearCountry(countryId: string, point: MapPoint, clicked: Country | null): boolean {
+    const path = this.countryElements.get(countryId)?.find((element) => element instanceof SVGPathElement)
+    if (!path || !this.transform) return false
+    const { k } = this.transform
+    const distance = NEAR_DISTANCE[this.lastPointerType === 'touch' ? 'touch' : 'mouse']
+    const clickedBounds = clicked && clicked.id !== countryId && this.countryBounds.get(clicked.id)
+    if (clickedBounds) {
+      const [[left, top], [right, bottom]] = clickedBounds
+      if (Math.max(right - left, bottom - top) * k < NEAR_MIN_CLICKED_SIZE * distance) return false
+    }
+    const [x, y] = this.transform.invert(point)
+    // Every copy of the world has the same path data (shifted by a transform), so test on copy 0.
+    const worldX = (x: number) => x - Math.floor(x / WORLD_WIDTH) * WORLD_WIDTH
+
+    const marker = this.markerByCountry.get(countryId)
+    if (marker && marker.size * k < MARKER_HIDE_SIZE) {
+      const dx = worldX(x - marker.centre[0] + WORLD_WIDTH / 2) - WORLD_WIDTH / 2
+      if (Math.hypot(dx, y - marker.centre[1]) * k <= MARKER_HIT_RADIUS + distance) return true
+    }
+    // The point itself, and points around it at the full and half distance.
+    const offsets: [number, number][] = [[0, 0]]
+    for (const radius of [distance, distance / 2]) {
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4
+        offsets.push([radius * Math.cos(angle), radius * Math.sin(angle)])
+      }
+    }
+    return offsets.some(([dx, dy]) => path.isPointInFill(new DOMPoint(worldX(x + dx / k), y + dy / k)))
+  }
+
+  /**
+   * Taps on this Country (the Prompt), or a Near Miss of it, count right away
+   * instead of after the double-tap wait (feedback 13); a second tap still
+   * zooms. Null: every tap waits.
+   */
+  setInstantTapCountry(countryId: string | null): void {
+    this.instantTapCountryId = countryId
   }
 
   /** Visually highlights one Country, or none. */
@@ -488,23 +563,54 @@ export class WorldMap {
     return (id && this.countries.get(id)) || null
   }
 
-  private listenForPointing(): void {
+  private listenForPointing(): TouchTaps {
     const setHovered = (country: Country | null) => {
       if (country === this.hoveredCountry) return
       this.hoveredCountry = country
       this.hoverListeners.forEach((listener) => listener(country))
     }
-    // Touch has no hover; taps arrive as clicks.
+    const click = (target: EventTarget | null, clientX: number, clientY: number) => {
+      const country = this.countryAt(target)
+      const point = this.mapPoint(clientX, clientY)
+      this.clickListeners.forEach((listener) => listener(country, point))
+    }
+    this.svg.addEventListener('pointerdown', (event) => (this.lastPointerType = event.pointerType), { capture: true })
+    // Touch has no hover; TouchTaps hovers the Country under the finger instead.
     this.svg.addEventListener('pointerover', (event) => {
       if (event.pointerType !== 'touch') setHovered(this.countryAt(event.target))
     })
-    this.svg.addEventListener('pointerleave', () => setHovered(null))
-    this.svg.addEventListener('click', (event) => {
-      const country = this.countryAt(event.target)
-      const bounds = this.element.getBoundingClientRect()
-      const point: MapPoint = [event.clientX - bounds.left, event.clientY - bounds.top]
-      this.clickListeners.forEach((listener) => listener(country, point))
+    this.svg.addEventListener('pointerleave', (event) => {
+      if (event.pointerType !== 'touch') setHovered(null)
     })
+    // Taps come from TouchTaps, not as clicks.
+    this.svg.addEventListener('click', (event) => {
+      if (this.lastPointerType !== 'touch') click(event.target, event.clientX, event.clientY)
+    })
+
+    const selection = select(this.element)
+    return new TouchTaps(this.svg, {
+      press: (target) => setHovered(this.countryAt(target)),
+      release: () => setHovered(null),
+      tap: click,
+      countsAtOnce: (target, clientX, clientY) => {
+        const id = this.instantTapCountryId
+        if (!id) return false
+        const country = this.countryAt(target)
+        return country?.id === id || this.isNearCountry(id, this.mapPoint(clientX, clientY), country)
+      },
+      doubleTap: (clientX, clientY) =>
+        selection
+          .transition()
+          .duration(DOUBLE_TAP_ZOOM_DURATION)
+          .call(this.zoomBehavior.scaleBy, DOUBLE_TAP_ZOOM, this.mapPoint(clientX, clientY)),
+      zoomDrag: (clientX, clientY, dy) =>
+        this.zoomBehavior.scaleBy(selection, Math.exp(-dy * ZOOM_DRAG_SPEED), this.mapPoint(clientX, clientY)),
+    })
+  }
+
+  private mapPoint(clientX: number, clientY: number): MapPoint {
+    const bounds = this.element.getBoundingClientRect()
+    return [clientX - bounds.left, clientY - bounds.top]
   }
 
   private createZoomBehavior(): ZoomBehavior<HTMLElement, unknown> {
@@ -520,8 +626,15 @@ export class WorldMap {
           [-Infinity, 0],
           [Infinity, this.worldHeight],
         ])
-        // d3's default, plus the middle mouse button.
-        .filter((event) => (!event.ctrlKey || event.type === 'wheel') && (!event.button || event.button === 1))
+        // d3's default, plus the middle mouse button. The second finger of a double tap is TouchTaps'.
+        .filter(
+          (event) =>
+            (!event.ctrlKey || event.type === 'wheel') &&
+            (!event.button || event.button === 1) &&
+            !(event.type === 'touchstart' && this.touchTaps.claimed),
+        )
+        // No double-tap zoom of d3's own: TouchTaps does it, without the first tap counting as a click.
+        .tapDistance(0)
         // Twice d3's default wheel speed, so the full zoom range takes ~30 scroll steps.
         .wheelDelta((event) => -event.deltaY * (event.deltaMode === 1 ? 0.1 : event.deltaMode ? 2 : 0.004))
         .on('zoom', (event: D3ZoomEvent<HTMLElement, unknown>) => {

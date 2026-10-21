@@ -5,11 +5,24 @@
   min-width: 0;
 }
 
+/* The Quiz Streak comes last; on phones it moves up next to the question number (see below). */
 .quiz-status__progress {
   display: flex;
   align-items: center;
   gap: 6px;
   flex: none;
+}
+
+.quiz-status__counter {
+  display: contents;
+}
+
+.pill--quiz-streak {
+  order: 1;
+}
+
+.pill__label {
+  display: none;
 }
 
 /* Fixed minimum widths and tabular digits keep the pills from changing size. */
@@ -228,17 +241,42 @@
   }
 }
 
-/* Phones and tablets (up to 960px, where a one-row Navbar squeezed the Prompt):
-   pills on the first row, the Prompt on its own row below. */
+/* Phones and tablets (up to 960px, where a one-row Navbar squeezed the Prompt): three centred lines (feedback 13).
+   The question number and Quiz Streak as plain text, the other pills, and the Prompt. */
 @media (max-width: 960px) {
   .quiz-status {
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 5px;
     width: 100%;
   }
 
   .quiz-status__progress {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px 4px;
+  }
+
+  .quiz-status__counter {
+    display: flex;
+    flex-basis: 100%;
+    justify-content: center;
     gap: 4px;
+  }
+
+  .quiz-status__counter .pill {
+    min-width: 0;
+    height: 20px;
+    padding: 0 6px;
+    background: none;
+    font-weight: 600;
+  }
+
+  .pill--question {
+    opacity: 0.75;
+  }
+
+  .pill__label {
+    display: inline;
   }
 
   .pill {
@@ -248,12 +286,18 @@
     font-size: 0.8rem;
   }
 
-  .pill--question {
-    min-width: 78px;
-  }
-
   .quiz-status__prompt {
+    justify-content: center;
     width: 100%;
+    text-align: center;
+  }
+}
+
+/* The narrowest phones (320px): a little less room per pill. */
+@media (max-width: 360px) {
+  .pill {
+    min-width: 42px;
+    padding: 0 5px;
   }
 }
 
@@ -298,9 +342,15 @@
   }
 }
 
-/* Narrow phones: no room for the Quiz Streak; its Sound Effects still play. */
-@media (max-width: 480px) {
-  .pill--quiz-streak {
-    display: none;
+/* Phones and tablets: centred below the centred Prompt. */
+@media (max-width: 960px) {
+  .quiz-status__prompt-notice {
+    right: 0;
+    width: max-content;
+    margin: 0 auto;
+  }
+
+  .quiz-status__prompt-notice::before {
+    left: calc(50% - 6px);
   }
 }

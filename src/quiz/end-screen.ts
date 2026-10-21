@@ -1,5 +1,5 @@
-import { countryInfo } from '../country/country-info.ts'
 import { createCountryLabel } from '../country/country-label.ts'
+import { byCountryName, capitalName } from '../country/country-names.ts'
 import { createLeaderboardView, describeQuizSettings } from '../leaderboard/leaderboard-view.ts'
 import type { LeaderboardEntry } from '../leaderboard/leaderboard.ts'
 import { createStreakLabel } from '../streak/streak.ts'
@@ -112,7 +112,7 @@ export class EndScreen {
       const countries = run.results
         .filter((record) => record.result === group.result)
         .map((record) => record.country)
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort(byCountryName)
 
       const details = document.createElement('details')
       details.className = `end-screen__group end-screen__group--${group.result}`
@@ -128,7 +128,7 @@ export class EndScreen {
       for (const country of countries) {
         const item = document.createElement('li')
         item.append(createCountryLabel(country))
-        const capital = countryInfo(country)?.capital
+        const capital = capitalName(country)
         if (settings.gameModeId === 'capital-to-location' && capital) {
           const detail = document.createElement('span')
           detail.className = 'end-screen__capital'

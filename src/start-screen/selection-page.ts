@@ -1,5 +1,7 @@
+import { byCountryName, countryName } from '../country/country-names.ts'
 import type { Country } from '../country/country.ts'
 import { flagUrl } from '../country/flag.ts'
+import { onLanguageChange } from '../language/language.ts'
 import { GAME_MODES, type GameMode } from '../quiz/game-mode.ts'
 import { DEFAULT_MODIFIERS, type ModifierSettings } from '../quiz/modifier.ts'
 import {
@@ -45,8 +47,6 @@ interface ContinentGroup {
   blocks: SectionBlock[]
 }
 
-const byName = (a: Country, b: Country) => a.name.localeCompare(b.name)
-
 /**
  * The Selection page: the page of the Start Screen where the player chooses
  * what to quiz, opened from its *What do you want to quiz?* button.
@@ -68,7 +68,8 @@ const byName = (a: Country, b: Country) => a.name.localeCompare(b.name)
  *
  * The Countries are built once per Continent and then only updated in place,
  * so their Flags don't reload (no flicker) and the Sections can open and close
- * with an animation.
+ * with an animation. A change of Language builds them again, named and sorted
+ * in the new one.
  *
  * The StartScreen owns the rest: `update` re-renders the page for the Game
  * Mode, and the page calls `onChange` after every change of the Selection.
@@ -165,6 +166,11 @@ export class SelectionPage {
     this.element.querySelector('.selection-page__clear')!.addEventListener('click', () => {
       this.chosen.clear()
       options.onChange()
+    })
+    // The Language Switcher is behind the Start Screen, so this page is never shown while it changes.
+    onLanguageChange(() => {
+      this.groups = new Map()
+      this.render()
     })
     this.backButton.addEventListener('click', options.onDone)
     this.doneButton.addEventListener('click', options.onDone)
@@ -270,7 +276,7 @@ export class SelectionPage {
 
     const blocks: SectionBlock[] = []
     for (const section of continent.sections) {
-      const countries = this.countries.filter((country) => section.includes(country)).sort(byName)
+      const countries = this.countries.filter((country) => section.includes(country)).sort(byCountryName)
       if (!countries.length) continue
       const key = sectionKey(continent, section)
       const block = document.createElement('div')
@@ -317,7 +323,7 @@ export class SelectionPage {
     if (flag instanceof HTMLImageElement) Object.assign(flag, { src: url, alt: '', loading: 'lazy' })
     const name = document.createElement('span')
     name.className = 'selection-page__country-name'
-    name.textContent = country.name
+    name.textContent = countryName(country)
     item.append(flag, name)
     return item
   }
@@ -398,7 +404,7 @@ export class SelectionPage {
         ? 'Asked as its states'
         : unaskable
           ? `Not asked: ${this.gameMode.unaskableReason(country)}`
-          : country.name
+          : countryName(country)
     }
     block.count.textContent = String(count)
   }

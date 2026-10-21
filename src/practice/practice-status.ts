@@ -76,4 +76,9 @@ export class PracticeStatus {
   showPromptNotice(text: string): void {
     this.prompt.showNotice(text)
   }
+
+  /** Shows the Prompt's name or capital in the new Language. */
+  refreshNames(): void {
+    this.prompt.refreshNames()
+  }
 }

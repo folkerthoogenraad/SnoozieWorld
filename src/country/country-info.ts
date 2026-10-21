@@ -35,17 +35,9 @@ export function countryInfo(country: Pick<Country, 'id'>): CountryInfo | null {
   return INFO[country.id] ?? null
 }
 
-// Capitals with the same name, e.g. Kingston (Jamaica and Norfolk Island).
-const capitalCounts = new Map<string, number>()
-for (const info of Object.values(INFO)) {
-  if (info.capital) capitalCounts.set(info.capital, (capitalCounts.get(info.capital) ?? 0) + 1)
-}
-
-/** The capital as asked in a Prompt: "Canberra", or "Kingston (Oceania)" when another capital has the same name. */
-export function capitalPrompt(country: Country): string | null {
-  const capital = countryInfo(country)?.capital
-  if (!capital) return null
-  return (capitalCounts.get(capital) ?? 0) > 1 ? `${capital} (${country.continent})` : capital
+/** The ids of all Countries with Country Info. */
+export function countryInfoIds(): string[] {
+  return Object.keys(INFO)
 }
 
 /** "17.9 million", "1.41 billion", or the exact number below a million. */

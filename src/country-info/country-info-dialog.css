@@ -38,6 +38,16 @@
   line-height: 1.2;
 }
 
+.country-info__english-name {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.country-info__english-name[hidden] {
+  display: none;
+}
+
 .country-info__kind {
   margin: 2px 0 0;
   color: var(--color-text-muted);

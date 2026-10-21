@@ -11,8 +11,9 @@ const CROSS_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 
 /**
  * The Navbar content during a Quiz Run: the Quiz Progress pills (question
  * number, Correct, Half Correct and Missed counts, running Score, Quiz Streak)
- * and the Prompt (see PromptView). The Streak pill is hidden on phones, for
- * lack of room. All parts have fixed widths so nothing moves while
+ * and the Prompt (see PromptView). On phones and tablets it has three centred
+ * lines (feedback 13): the question number and Quiz Streak as plain text, the
+ * other pills, the Prompt. All parts have fixed widths so nothing moves while
  * playing. With a single Try per Prompt there is no Half Correct, so its pill
  * is hidden.
  *
@@ -38,12 +39,14 @@ export class QuizStatus {
     this.element.className = 'quiz-status'
     this.element.innerHTML = `
       <div class="quiz-status__progress">
-        <span class="pill pill--question" title="Question"><span class="pill__value"></span></span>
+        <span class="quiz-status__counter">
+          <span class="pill pill--question" title="Question"><span class="pill__label">Question</span><span class="pill__value"></span></span>
+          <span class="pill pill--streak pill--quiz-streak">${FLAME_ICON}<span class="pill__value"></span></span>
+        </span>
         <span class="pill pill--correct" title="Correct on the first try">${CHECK_ICON}<span class="pill__value"></span></span>
         <span class="pill pill--half-correct" title="Correct on the second try"><span class="pill__icon">~</span><span class="pill__value"></span></span>
         <span class="pill pill--missed" title="Missed">${CROSS_ICON}<span class="pill__value"></span></span>
         <span class="pill pill--score" title="Score so far"><span class="pill__value"></span></span>
-        <span class="pill pill--streak pill--quiz-streak">${FLAME_ICON}<span class="pill__value"></span></span>
       </div>
     `
     this.element.append(this.prompt.element)
@@ -98,5 +101,10 @@ export class QuizStatus {
   /** A short message popping up below the Prompt, e.g. "Hints are disabled". */
   showPromptNotice(text: string): void {
     this.prompt.showNotice(text)
+  }
+
+  /** Shows the Prompt's name or capital in the new Language. */
+  refreshNames(): void {
+    this.prompt.refreshNames()
   }
 }

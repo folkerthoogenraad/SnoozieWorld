@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Navbar mockup</title>
+    <!--
+      Mockup for feedback 13 (docs/feedback/13.md), "Mobile Layout" and "Language switcher":
+        - on phones the Language Switcher and Sound Toggle merge into one menu button;
+        - the Quiz Progress becomes three centred lines: question number, Prompt Result pills, Prompt;
+        - the globe and the menu button are vertically centred on the Navbar;
+        - the Language Switcher gets a very small Flag (also on desktop).
+      Open it in a browser from inside the repository: the flags come from node_modules/flag-icons.
+      The styles copy the app's (src/navbar, src/quiz/quiz-status.css, src/language, src/sound); everything
+      marked "New" is the proposal. All controls at the top change every frame at once.
+    -->
+    <style>
+      :root {
+        --color-land: #5fa84f;
+        --color-ocean: #3b82b8;
+        --color-capital: #111111;
+        --color-pill-correct: #4caf50;
+        --color-pill-half-correct: #f2cf5b;
+        --color-pill-missed: #ef5350;
+        --color-pill-streak: #ff9f43;
+        --color-pill-learned: #64b5f6;
+        --color-navbar-bg: #16202b;
+        --color-navbar-text: #f2f5f8;
+        --color-surface: #ffffff;
+        --color-surface-hover: #eef1f4;
+        --color-text: #1b2430;
+        --color-text-muted: #5a6675;
+        --color-accent: #2f7dd1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #e9edf1;
+        color: var(--color-text);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      /* ---------- Mockup chrome (not part of the proposal) ---------- */
+
+      .mockup-note {
+        margin-bottom: 12px;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        margin-bottom: 20px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+      }
+
+      .controls fieldset {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+
+      .controls legend {
+        float: left;
+        margin-right: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
+      }
+
+      .controls label {
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #eef1f4;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      .controls label:has(:checked) {
+        background: var(--color-accent);
+        color: #fff;
+      }
+
+      .controls input {
+        display: none;
+      }
+
+      h2 {
+        margin: 24px 0 10px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-text-muted);
+      }
+
+      .phones {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 24px;
+      }
+
+      .phone {
+        flex: none;
+        max-width: 100%;
+      }
+
+      .phone__caption {
+        margin-bottom: 6px;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+      }
+
+      .phone__screen {
+        position: relative;
+        height: 300px;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 6px solid #1b1f24;
+        background:
+          radial-gradient(ellipse 40% 30% at 30% 65%, var(--color-land) 98%, transparent 100%),
+          radial-gradient(ellipse 30% 40% at 75% 75%, var(--color-land) 98%, transparent 100%),
+          var(--color-ocean);
+      }
+
+      .desktop {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 6px solid #1b1f24;
+      }
+
+      .desktop .navbar {
+        min-width: 1000px;
+      }
+
+      /* ---------- The Navbar as it is today (desktop) ---------- */
+
+      .navbar {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 16px;
+        height: 56px;
+        padding: 0 20px;
+        background: var(--color-navbar-bg);
+        color: var(--color-navbar-text);
+        box-shadow: 0 1px 6px rgb(0 0 0 / 0.3);
+      }
+
+      .navbar__title {
+        justify-self: start;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        margin-left: -10px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-weight: 700;
+        font-size: 1.15rem;
+        cursor: pointer;
+      }
+
+      .navbar__logo {
+        width: 24px;
+        height: 24px;
+      }
+
+      .navbar__controls {
+        justify-self: end;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-right: -8px;
+      }
+
+      .icon-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 6px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+      }
+
+      .icon-button:hover,
+      .icon-button[aria-expanded='true'] {
+        background: rgb(255 255 255 / 0.1);
+      }
+
+      .icon-button svg {
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .icon-speaker {
+        width: 22px;
+        height: 22px;
+      }
+
+      .icon-speaker .speaker {
+        fill: currentColor;
+      }
+
+      .icon-chevron {
+        width: 12px;
+        height: 12px;
+        opacity: 0.8;
+      }
+
+      .sound-off {
+        opacity: 0.6;
+      }
+
+      /* Prompt and pills, as in quiz-status.css. */
+
+      .quiz-status {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        min-width: 0;
+      }
+
+      .quiz-status__progress {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 64px;
+        height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgb(255 255 255 / 0.1);
+        font-size: 0.9rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .pill svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .pill--question {
+        min-width: 100px;
+      }
+
+      .pill--correct svg {
+        color: var(--color-pill-correct);
+      }
+
+      .pill--half-correct b {
+        color: var(--color-pill-half-correct);
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .pill--missed svg {
+        color: var(--color-pill-missed);
+      }
+
+      .pill--streak svg {
+        color: var(--color-pill-streak);
+        fill: var(--color-pill-streak);
+        stroke: none;
+      }
+
+      .pill--learned svg {
+        color: var(--color-pill-learned);
+        stroke-width: 1.6;
+      }
+
+      .pill--score {
+        min-width: 60px;
+        font-weight: 600;
+      }
+
+      .prompt {
+        display: flex;
+        align-items: center;
+        width: 320px;
+        min-width: 0;
+        font-weight: 600;
+      }
+
+      .country-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        font-size: 1.05rem;
+      }
+
+      .country-label__name {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+        line-height: 1.15;
+      }
+
+      .flag {
+        flex: none;
+        display: block;
+        width: 32px;
+        height: 24px;
+        object-fit: cover;
+        border-radius: 3px;
+        box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+      }
+
+      .flag--large {
+        width: 56px;
+        height: 42px;
+      }
+
+      .capital {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.05rem;
+        line-height: 1.15;
+      }
+
+      .capital::before {
+        content: '';
+        flex: none;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--color-capital);
+        box-shadow: 0 0 0 2px rgb(255 255 255 / 0.8);
+      }
+
+      /* ---------- New: the tiny Language Flag ---------- */
+
+      /* Half the height of the Prompt's Flag, and dimmed a little, so it reads as a setting, not a Country. */
+      .language-flag {
+        flex: none;
+        display: block;
+        width: 16px;
+        height: 12px;
+        object-fit: cover;
+        border-radius: 2px;
+        box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3);
+        opacity: 0.9;
+      }
+
+      /* Variant: round, a shape the Prompt's Flags never have. */
+      [data-flag-shape='round'] .language-flag {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+      }
+
+      /* The "flag · speaker · chevron" button is wider; the globe's column grows with it to keep the Status centred. */
+      [data-trigger='row'] .navbar--phone {
+        --side: 64px;
+      }
+
+      [data-flag-shape='none'] .language-flag {
+        display: none;
+      }
+
+      /* ---------- New: the phone Navbar ---------- */
+
+      /* Globe | Status | Menu. The globe and the menu button are centred on the Navbar's full height. */
+      .navbar--phone {
+        position: relative;
+        grid-template-columns: var(--side, 40px) 1fr var(--side, 40px);
+        gap: 8px;
+        height: auto;
+        min-height: 56px;
+        padding: 8px 12px;
+      }
+
+      .navbar--phone .navbar__title {
+        justify-self: center;
+        padding: 8px;
+        margin: 0;
+      }
+
+      .navbar--phone .navbar__controls {
+        justify-self: center;
+        margin: 0;
+      }
+
+      .navbar--phone .navbar__status {
+        display: flex;
+        justify-content: center;
+        min-width: 0;
+      }
+
+      .navbar--phone .quiz-status {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+      }
+
+      /* Line 1: the question number (and the Quiz Streak, which today is hidden below 480px for lack of room). */
+      .quiz-status__question {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        opacity: 0.75;
+      }
+
+      .quiz-status__question .streak {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .quiz-status__question svg {
+        width: 12px;
+        height: 12px;
+        fill: var(--color-pill-streak);
+      }
+
+      /* Line 2: the pills. */
+      .navbar--phone .quiz-status__progress {
+        gap: 4px;
+      }
+
+      .navbar--phone .pill {
+        min-width: 46px;
+        height: 24px;
+        padding: 0 7px;
+        font-size: 0.8rem;
+      }
+
+      .navbar--phone .pill--learned {
+        min-width: 70px;
+      }
+
+      /* Line 3: the Prompt, centred; a long name wraps to two centred lines. */
+      .navbar--phone .prompt {
+        justify-content: center;
+        width: 100%;
+        text-align: center;
+      }
+
+      .navbar--phone .country-label {
+        gap: 8px;
+        font-size: 0.95rem;
+      }
+
+      .navbar--phone .flag--large {
+        width: 48px;
+        height: 36px;
+      }
+
+      /* Very narrow phones (320px): a bit less padding in the pills. */
+      @container phone (max-width: 340px) {
+        .navbar--phone .pill {
+          min-width: 42px;
+          padding: 0 5px;
+        }
+      }
+
+      .phone__screen {
+        container: phone / inline-size;
+      }
+
+      /* ---------- New: the merged Settings Menu (phones only) ---------- */
+
+      .settings-trigger {
+        position: relative;
+        padding: 0 4px;
+      }
+
+      .settings-trigger .icon-speaker {
+        width: 20px;
+        height: 20px;
+      }
+
+      .icon-gear {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* Variant "flag + speaker": the flag sits on the speaker's corner as a badge. */
+      .settings-trigger--badge .language-flag {
+        position: absolute;
+        right: 3px;
+        bottom: 7px;
+        box-shadow: 0 0 0 2px var(--color-navbar-bg);
+        opacity: 1;
+      }
+
+      .settings-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 8px;
+        z-index: 2;
+        width: 220px;
+        padding: 6px;
+        border-radius: 12px;
+        background: var(--color-surface);
+        color: var(--color-text);
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+        font-size: 0.95rem;
+      }
+
+      .settings-menu[hidden] {
+        display: none;
+      }
+
+      .settings-menu__heading {
+        padding: 6px 10px 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--color-text-muted);
+      }
+
+      .settings-menu__item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 44px;
+        padding: 0 10px;
+        border: none;
+        border-radius: 8px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .settings-menu__item:hover {
+        background: var(--color-surface-hover);
+      }
+
+      .settings-menu__item .language-flag {
+        opacity: 1;
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.15);
+      }
+
+      .settings-menu__check {
+        margin-left: auto;
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: var(--color-accent);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .settings-menu hr {
+        margin: 4px 6px;
+        border: none;
+        border-top: 1px solid #e3e7eb;
+      }
+
+      .settings-menu__item .icon-speaker {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .switch {
+        position: relative;
+        margin-left: auto;
+        width: 36px;
+        height: 20px;
+        border-radius: 999px;
+        background: #c5ccd3;
+        transition: background 0.15s;
+      }
+
+      .switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+        transition: transform 0.15s;
+      }
+
+      .switch--on {
+        background: var(--color-pill-correct);
+      }
+
+      .switch--on::after {
+        transform: translateX(16px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mockup-note">
+      Mockup · feedback 13 · mobile Navbar and Language Switcher. The controls change every frame; tap the menu button
+      in a phone to open the Settings Menu.
+    </div>
+
+    <form class="controls" onsubmit="return false">
+      <fieldset data-control="mode">
+        <legend>Mode</legend>
+        <label><input type="radio" name="mode" value="name" checked />Name + flag</label>
+        <label><input type="radio" name="mode" value="name-only" />Name only</label>
+        <label><input type="radio" name="mode" value="flag-only" />Flag only</label>
+        <label><input type="radio" name="mode" value="capital" />Capital</label>
+        <label><input type="radio" name="mode" value="practice" />Practice</label>
+        <label><input type="radio" name="mode" value="explore" />Explore</label>
+      </fieldset>
+      <fieldset>
+        <legend>Prompt</legend>
+        <label><input type="radio" name="prompt" value="0" checked />Short</label>
+        <label><input type="radio" name="prompt" value="1" />Long</label>
+        <label><input type="radio" name="prompt" value="2" />Longest</label>
+      </fieldset>
+      <fieldset>
+        <legend>Menu button</legend>
+        <label><input type="radio" name="trigger" value="badge" checked />Speaker + flag badge</label>
+        <label><input type="radio" name="trigger" value="row" />Flag · speaker · chevron</label>
+        <label><input type="radio" name="trigger" value="gear" />Gear</label>
+      </fieldset>
+      <fieldset>
+        <legend>Language flag</legend>
+        <label><input type="radio" name="flagShape" value="rect" checked />Rectangle</label>
+        <label><input type="radio" name="flagShape" value="round" />Round</label>
+        <label><input type="radio" name="flagShape" value="none" />None</label>
+      </fieldset>
+      <fieldset>
+        <legend>Two tries</legend>
+        <label><input type="radio" name="tries" value="2" checked />Yes</label>
+        <label><input type="radio" name="tries" value="1" />Single Guess</label>
+      </fieldset>
+    </form>
+
+    <h2>Phones</h2>
+    <div class="phones" data-phones></div>
+
+    <h2>Desktop (only the Flag is new)</h2>
+    <div class="desktop" data-desktop></div>
+
+    <script>
+      const FLAGS = '../../../node_modules/flag-icons/flags'
+      const PROMPTS = [
+        { code: 'cl', en: 'Chile', nl: 'Chili', capital: 'Santiago' },
+        { code: 'cf', en: 'Central African Republic', nl: 'Centraal-Afrikaanse Republiek', capital: 'Bangui' },
+        {
+          code: 'gs',
+          en: 'South Georgia and the South Sandwich Islands',
+          nl: 'Zuid-Georgia en de Zuidelijke Sandwicheilanden',
+          capital: 'King Edward Point',
+        },
+      ]
+      const LANGUAGES = [
+        { id: 'en', flag: 'gb', name: 'English' },
+        { id: 'nl', flag: 'nl', name: 'Nederlands' },
+      ]
+
+      const state = { mode: 'name', prompt: 0, trigger: 'badge', flagShape: 'rect', tries: '2', language: 'en', sound: true, openMenu: null }
+
+      const ICON = {
+        check: '<svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" /></svg>',
+        cross: '<svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" /></svg>',
+        flame: '<svg viewBox="0 0 16 16"><path d="M8 1c.5 2.5 4.5 4.5 4.5 8.5A4.5 4.5 0 0 1 3.5 9.5C3.5 7.5 5 6 5.5 4.5 6.5 6 7 6.5 7.5 6.5 8 5 8 3 8 1z" /></svg>',
+        cap: '<svg viewBox="0 0 16 16"><path d="M1 6.2 8 3l7 3.2-7 3.2zM4 7.6v3.2c1 1 2.4 1.5 4 1.5s3-.5 4-1.5V7.6M14.5 6.4v4" /></svg>',
+        chevron: '<svg class="icon-chevron" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" /></svg>',
+        tick: '<svg class="settings-menu__check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" /></svg>',
+        gear: '<svg class="icon-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>',
+      }
+
+      const speaker = (on) =>
+        `<svg class="icon-speaker" viewBox="0 0 24 24"><path class="speaker" d="M4 9h4l5-4v14l-5-4H4z" />${
+          on ? '<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />' : '<path d="M16.5 9.5l5 5M21.5 9.5l-5 5" />'
+        }</svg>`
+
+      const language = () => LANGUAGES.find((l) => l.id === state.language)
+      const languageFlag = (l = language()) =>
+        `<img class="language-flag" src="${FLAGS}/${state.flagShape === 'round' ? '1x1' : '4x3'}/${l.flag}.svg" alt="" />`
+      const prompt = () => PROMPTS[state.prompt]
+      const name = () => prompt()[state.language]
+      const flag = (large) => `<img class="flag${large ? ' flag--large' : ''}" src="${FLAGS}/4x3/${prompt().code}.svg" alt="" />`
+
+      function promptHtml() {
+        switch (state.mode) {
+          case 'capital':
+            return `<span class="capital">${prompt().capital}</span>`
+          case 'flag-only':
+            return flag(true)
+          case 'name-only':
+            return `<span class="country-label"><span class="country-label__name">${name()}</span></span>`
+          default:
+            return `<span class="country-label">${flag()}<span class="country-label__name">${name()}</span></span>`
+        }
+      }
+
+      function pillsHtml(withQuestion) {
+        if (state.mode === 'practice') {
+          return `<span class="pill pill--streak">${ICON.flame}<span>7</span></span>
+            <span class="pill pill--learned">${ICON.cap}<span>12 / 46</span></span>`
+        }
+        return `${withQuestion ? '<span class="pill pill--question">12 / 46</span>' : ''}
+          <span class="pill pill--correct">${ICON.check}<span>8</span></span>
+          ${state.tries === '2' ? '<span class="pill pill--half-correct"><b>~</b><span>2</span></span>' : ''}
+          <span class="pill pill--missed">${ICON.cross}<span>1</span></span>
+          <span class="pill pill--score">${state.tries === '2' ? '81%' : '72%'}</span>
+          ${withQuestion ? `<span class="pill pill--streak">${ICON.flame}<span>3</span></span>` : ''}`
+      }
+
+      function statusHtml(phone) {
+        if (state.mode === 'explore') return `<span class="country-label">${flag()}<span class="country-label__name">${name()}</span></span>`
+        if (!phone) {
+          return `<div class="quiz-status"><div class="quiz-status__progress">${pillsHtml(true)}</div><div class="prompt">${promptHtml()}</div></div>`
+        }
+        const question =
+          state.mode === 'practice'
+            ? ''
+            : `<div class="quiz-status__question"><span>Question 12 / 46</span><span class="streak">${ICON.flame}3</span></div>`
+        return `<div class="quiz-status">${question}<div class="quiz-status__progress">${pillsHtml(false)}</div><div class="prompt">${promptHtml()}</div></div>`
+      }
+
+      function triggerHtml() {
+        switch (state.trigger) {
+          case 'gear':
+            return ICON.gear
+          case 'row':
+            return `${languageFlag()}${speaker(state.sound)}${ICON.chevron}`
+          default:
+            return `<span class="${state.sound ? '' : 'sound-off'}">${speaker(state.sound)}</span>${languageFlag()}`
+        }
+      }
+
+      function menuHtml(id) {
+        return `<div class="settings-menu" role="menu" ${state.openMenu === id ? '' : 'hidden'}>
+          <div class="settings-menu__heading">Country names</div>
+          ${LANGUAGES.map(
+            (l) => `<button type="button" class="settings-menu__item" role="menuitemradio" data-language="${l.id}">
+              ${languageFlag(l)}${l.name}${l.id === state.language ? ICON.tick : ''}</button>`,
+          ).join('')}
+          <hr />
+          <button type="button" class="settings-menu__item" role="menuitemcheckbox" data-sound>
+            ${speaker(state.sound)}Sound effects<span class="switch${state.sound ? ' switch--on' : ''}"></span>
+          </button>
+        </div>`
+      }
+
+      const logo = `<button class="navbar__title" type="button"><img class="navbar__logo" src="../../../public/favicon.svg" alt="" />`
+
+      function phoneHtml(width, id) {
+        const triggerClass = state.trigger === 'badge' ? ' settings-trigger--badge' : ''
+        return `<div class="phone" style="width:${width + 12}px">
+          <div class="phone__caption">${width}px</div>
+          <div class="phone__screen" data-flag-shape="${state.flagShape}" data-trigger="${state.trigger}">
+            <header class="navbar navbar--phone">
+              ${logo}</button>
+              <div class="navbar__status">${statusHtml(true)}</div>
+              <div class="navbar__controls">
+                <button type="button" class="icon-button settings-trigger${triggerClass}" aria-label="Settings" aria-expanded="${state.openMenu === id}" data-menu="${id}">
+                  ${triggerHtml()}
+                </button>
+              </div>
+              ${menuHtml(id)}
+            </header>
+          </div>
+        </div>`
+      }
+
+      function desktopHtml() {
+        return `<header class="navbar" data-flag-shape="${state.flagShape}">
+          ${logo}<span>SnoozieWorld</span></button>
+          <div class="navbar__status">${statusHtml(false)}</div>
+          <div class="navbar__controls">
+            <button type="button" class="icon-button" data-cycle-language>${languageFlag()}${state.language.toUpperCase()}${ICON.chevron}</button>
+            <button type="button" class="icon-button${state.sound ? '' : ' sound-off'}" data-sound>${speaker(state.sound)}</button>
+          </div>
+        </header>`
+      }
+
+      function render() {
+        document.querySelector('[data-phones]').innerHTML = [320, 375, 430].map((w) => phoneHtml(w, String(w))).join('')
+        document.querySelector('[data-desktop]').innerHTML = desktopHtml()
+      }
+
+      document.querySelector('.controls').addEventListener('change', (event) => {
+        state[event.target.name] = event.target.name === 'prompt' ? Number(event.target.value) : event.target.value
+        render()
+      })
+
+      document.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-menu], [data-language], [data-sound], [data-cycle-language]')
+        if (!target) {
+          if (state.openMenu && !event.target.closest('.settings-menu, .controls')) {
+            state.openMenu = null
+            render()
+          }
+          return
+        }
+        if (target.dataset.menu) state.openMenu = state.openMenu === target.dataset.menu ? null : target.dataset.menu
+        if (target.dataset.language) state.language = target.dataset.language
+        if (target.hasAttribute('data-sound')) state.sound = !state.sound
+        if (target.hasAttribute('data-cycle-language')) state.language = state.language === 'en' ? 'nl' : 'en'
+        render()
+      })
+
+      // For screenshots: navbar.html?prompt=2&openMenu=375
+      for (const [key, value] of new URLSearchParams(location.search)) state[key] = key === 'prompt' ? Number(value) : value
+      for (const input of document.querySelectorAll('.controls input')) input.checked = String(state[input.name]) === input.value
+      render()
+    </script>
+  </body>
+</html>

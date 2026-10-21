@@ -1,3 +1,4 @@
+import { countryName } from './country-names.ts'
 import type { Country } from './country.ts'
 import { flagUrl } from './flag.ts'
 import './country-label.css'
@@ -16,14 +17,14 @@ export function createFlag(country: Country, size: 'small' | 'large' = 'small'):
   return flag
 }
 
-/** A Country's Flag followed by its name. */
+/** A Country's Flag followed by its name in the current Language. */
 export function createCountryLabel(country: Country): HTMLElement {
   const label = document.createElement('span')
   label.className = 'country-label'
 
   const name = document.createElement('span')
   name.className = 'country-label__name'
-  name.textContent = country.name
+  name.textContent = countryName(country)
 
   label.append(createFlag(country), name)
   return label
